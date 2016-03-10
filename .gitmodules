@@ -1,0 +1,4 @@
+[submodule ".ros.net"]
+	path = .ros.net
+	url = https://github.com/uml-robotics/ROS.NET
+	branch = master

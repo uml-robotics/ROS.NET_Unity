@@ -3,3 +3,4 @@
 *.suo
 **/obj/*
 **/bin/*
+*.sln.cache

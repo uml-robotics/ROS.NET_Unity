@@ -1,9 +1,16 @@
 @echo off
-
 for /D %%A in (C:\Windows\Microsoft.NET\Framework*) do IF EXIST %%A\v4* for /f "tokens=*" %%B in ('dir /b /a:d %%A') do set TOOLSPATH=%%A\%%B
 if NOT DEFINED TOOLSPATH goto :Fail
 if NOT EXIST %TOOLSPATH%\msbuild.exe goto :Fail
+
 %TOOLSPATH%\msbuild.exe UnityROS.NETHack.sln /t:rebuild
+
+if EXIST COPY_TO_UNITY_PROJECT\ rmdir /Q /S COPY_TO_UNITY_PROJECT\
+mkdir COPY_TO_UNITY_PROJECT
+for %%C in (*.dll) do xcopy /I /Y /Q %%C COPY_TO_UNITY_PROJECT\
+for %%C in (*.pdb) do xcopy /I /Y /Q %%C COPY_TO_UNITY_PROJECT\
+del /Q COPY_TO_UNITY_PROJECT\UnityOutputHack*
+
 goto :eof
 :Fail
 echo "Could not locate msbuild! This build script should work with .NET build tools version >v4.0.*"

@@ -8,11 +8,30 @@ https://github.com/uml-robotics/ROS.NET
 ```
 git clone --recursive https://github.com/uml-robotics/ROS.NET_Unity
 cd ROS.NET_Unity
-buildme.bat
 ```
-- Copy/Paste all of the resulting DLL files in the top level of this repository (and optionally their pdb files)
 
-INTO: ```<your Unity project dir>/Assets/Plugins```
+THEN:
+
+To use precompiled ROS.NET as a Unity plugin, run:
+```
+buildUnityPluginDLLs.bat
+```
+This limits the targets that could run the resulting Unity game to Windows, BUT may be faster to run with debugging in Unity.
+
+To use ROS.NET as a Unity script, run:
+```
+buildUnityScriptSource.bat
+```
+
+In either case, all of the things needed by Unity to allow you to call ROS.Init(...) and make NodeHandles and all of that ROS-Y stuff
+	now exists in the COPY_TO_UNITY_PROJECT\ directory
+	
+Copy the contents of that foler into 
+INTO: ```<your Unity project dir>/Assets/Plugins```( or a subdirectory there-of)
+
+Now your projects Unity scripts have access to the core ROS.NET capabilities.
+
+(allegedly)
 
 Enjoy!
 

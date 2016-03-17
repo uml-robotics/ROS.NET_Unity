@@ -4,3 +4,4 @@
 **/obj/*
 **/bin/*
 *.sln.cache
+COPY_TO_UNITY_PROJECT/

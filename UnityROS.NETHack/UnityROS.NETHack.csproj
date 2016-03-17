@@ -77,15 +77,15 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ros-sharp\ROS_Comm\ROS_C-Sharp_UNITY.csproj">
+    <ProjectReference Include="..\.ros.net\ROS_Comm\ROS_C-Sharp_UNITY.csproj">
       <Project>{586A3B66-104A-4182-82C2-88DC120F10AC}</Project>
       <Name>ROS_C-Sharp_UNITY</Name>
     </ProjectReference>
-    <ProjectReference Include="..\ros-sharp\tf.net\tf.net_UNITY.csproj">
+    <ProjectReference Include="..\.ros.net\tf.net\tf.net_UNITY.csproj">
       <Project>{3F4BE4AA-4BDE-4976-A69D-C2CCB848E3BB}</Project>
       <Name>tf.net_UNITY</Name>
     </ProjectReference>
-    <ProjectReference Include="..\ros-sharp\XmlRpc_Wrapper\XmlRpc_Wrapper_UNITY.csproj">
+    <ProjectReference Include="..\.ros.net\XmlRpc_Wrapper\XmlRpc_Wrapper_UNITY.csproj">
       <Project>{8B7DB66C-9C03-4078-9276-B6A760CD4C2C}</Project>
       <Name>XmlRpc_Wrapper_UNITY</Name>
     </ProjectReference>

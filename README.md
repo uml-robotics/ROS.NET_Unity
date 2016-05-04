@@ -31,7 +31,8 @@ INTO: ```<your Unity project dir>/Assets/Plugins```( or a subdirectory there-of)
 
 Now your projects Unity scripts have access to the core ROS.NET capabilities.
 
-(allegedly)
+A set of such Unity scripts are included in the Assets/Scripts directory.
+The included scene SHOULD be a loose approximation of how RVIZ displays transforms on a Map... but the camera is deeeeerpy. GLHF
 
 Enjoy!
 

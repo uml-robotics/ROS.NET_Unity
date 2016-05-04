@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using XmlRpc_Wrapper;
 using gm = Messages.geometry_msgs;
 using Messages.tf;

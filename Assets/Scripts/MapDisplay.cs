@@ -5,7 +5,9 @@ using Messages.nav_msgs;
 using Microsoft.Win32.SafeHandles;
 using Ros_CSharp;
 using UnityEngine;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using System.Collections;
 
 public class MapDisplay : MonoBehaviour

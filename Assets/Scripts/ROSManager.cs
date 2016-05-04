@@ -5,7 +5,9 @@ using System.Text;
 using System.Threading;
 using Ros_CSharp;
 using UnityEngine;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using XmlRpc_Wrapper;
 
 /// <summary>

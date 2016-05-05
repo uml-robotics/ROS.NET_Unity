@@ -37,7 +37,6 @@ public class TfVisualizer : MonoBehaviour
         {
             Template.gameObject.SetActive(false);
         }
-	    EDB.OtherOutput += (s) => DebugText.Write(s.ToString());
 	    Root.GetComponentInChildren<TextMesh>().text = FixedFrame;
         tree[FixedFrame] = Root;
 

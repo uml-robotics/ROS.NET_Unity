@@ -38,7 +38,6 @@ public class TfVisualizer : MonoBehaviour
             Template.gameObject.SetActive(false);
         }
 	    EDB.OtherOutput += (s) => DebugText.Write(s.ToString());
-	    XmlRpcUtil.SetLogLevel(XmlRpcUtil.XMLRPC_LOG_LEVEL.DEBUG);
 	    Root.GetComponentInChildren<TextMesh>().text = FixedFrame;
         tree[FixedFrame] = Root;
 

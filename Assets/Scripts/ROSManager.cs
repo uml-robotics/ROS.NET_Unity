@@ -42,6 +42,7 @@ public class ROSManager : MonoBehaviour
             if (!ROS.isStarted())
             {
                 ROS.Init(new string[0], "unity_test_" + DateTime.Now.Ticks);
+                XmlRpcUtil.SetLogLevel(XmlRpcUtil.XMLRPC_LOG_LEVEL.ERROR);
             }
             return true;
 #if UNITY_EDITOR

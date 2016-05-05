@@ -6,7 +6,9 @@ using UnityEditor;
 using UnityEngine;
 using System.Collections;
 
+#if UNITY_EDITOR
 [InitializeOnLoad]
+#endif
 public class GUIHider : MonoBehaviour
 {
     private static List<GUIHider> _instances = new List<GUIHider>();
@@ -47,7 +49,7 @@ public class GUIHider : MonoBehaviour
 #if UNITY_EDITOR
                         !hider.HideAlways && (EditorApplication.isPlaying || !hider.HideInEditor);
 #else
-                        !HideAlways;
+                        !hider.HideAlways;
 #endif
 	        }
 	        while (deadmeat.Count > 0)

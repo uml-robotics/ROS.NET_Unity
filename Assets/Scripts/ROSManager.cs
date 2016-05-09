@@ -30,9 +30,37 @@ public class ROSManager : MonoBehaviour
         {
             if (logwriter == null)
             {
-                logwriter = new StreamWriter(Path.Combine(Application.dataPath, "unity_test_" + DateTime.Now.Ticks + ".log"));
-                logwriter.AutoFlush = true;
-                Application.logMessageReceived += Application_logMessageReceived;
+                string validlogpath = null;
+                string filename = "unity_test_" + DateTime.Now.Ticks + ".log";
+                foreach (string basepath in new[] {Application.dataPath, "/sdcard/ROS.NET_Logs/"})
+                {
+                    if (Directory.Exists(basepath))
+                    {
+                        try
+                        {
+                            if (Directory.GetFiles(basepath) == null)
+                            {
+                                continue;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogWarning(e);
+                        }
+                    }
+                    try
+                    {
+                        logwriter = new StreamWriter(Path.Combine(basepath, filename));
+                        logwriter.AutoFlush = true;
+                        logwriter.WriteLine("Opened log file for writing at " + DateTime.Now);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogWarning(e);
+                    }
+                    Application.logMessageReceived += Application_logMessageReceived;
+                    break;
+                }
             }
         }
 #if UNITY_EDITOR

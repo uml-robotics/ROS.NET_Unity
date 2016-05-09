@@ -13,6 +13,6 @@ public class LabelCorrector : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
 	{
-	    transform.LookAt(target.transform, new Vector3(0f, 1f, 0f));
+	    transform.LookAt(target.transform, target.transform.up);
 	}
 }

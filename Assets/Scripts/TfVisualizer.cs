@@ -91,7 +91,7 @@ public class TfVisualizer : MonoBehaviour
                 tf.child_frame_id = "/"+tf.child_frame_id;
 	        if (IsVisible(tf.child_frame_id))
 	        {
-	            Vector3 pos = new Vector3((float) tf.origin.x, (float) tf.origin.y, (float) tf.origin.z);
+	            Vector3 pos = new Vector3((float) -tf.origin.x, (float) tf.origin.y, (float) tf.origin.z);
 	            Quaternion rot = new Quaternion((float) tf.basis.x, (float) tf.basis.y, (float) tf.basis.z, (float) tf.basis.w);
                 /*if (rot != Quaternion.identity)
                     DebugText.WriteLine(""+tf.child_frame_id+" "+tf.basis);*/

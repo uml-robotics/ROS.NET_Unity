@@ -15,7 +15,7 @@ using Ros_CSharp;
 public class TfVisualizer : MonoBehaviour
 {
     private NodeHandle nh = null;
-    private Subscriber<Messages.tf.tfMessage> tfsub;
+    private Subscriber<Messages.tf.tfMessage> tfsub, tfstaticsub;
     private Text textmaybe;
     private Queue<Messages.tf.tfMessage> transforms = new Queue<Messages.tf.tfMessage>();
 
@@ -30,19 +30,32 @@ public class TfVisualizer : MonoBehaviour
 
     private Dictionary<string, Transform> tree = new Dictionary<string, Transform>();
 
-	// Use this for initialization
+    private void hideChildrenInHierarchy(Transform trans)
+    {
+        for (int i = 0; i < trans.childCount; i++)
+            trans.GetChild(i).hideFlags |= HideFlags.HideInHierarchy;
+    }
+
+    // Use this for initialization
 	void Start ()
     {
         if (Template != null)
         {
             Template.gameObject.SetActive(false);
+            hideChildrenInHierarchy(Template);
+            Template.hideFlags |= HideFlags.HideAndDontSave;
         }
+#if UNITY_EDITOR
+        ObjectNames.SetNameSmart(Root, FixedFrame);
+#endif
 	    Root.GetComponentInChildren<TextMesh>().text = FixedFrame;
         tree[FixedFrame] = Root;
+        hideChildrenInHierarchy(Root);
 
 	    if (ROSManager.StartROS())
 	    {
             nh = new NodeHandle();
+            tfstaticsub = nh.subscribe<Messages.tf.tfMessage>("/tf_static", 0, tf_callback, false);
             tfsub = nh.subscribe<Messages.tf.tfMessage>("/tf", 0, tf_callback, false);
 	    }
     }
@@ -92,22 +105,35 @@ public class TfVisualizer : MonoBehaviour
 	        if (IsVisible(tf.child_frame_id))
 	        {
 	            Vector3 pos = new Vector3((float) -tf.origin.x, (float) tf.origin.y, (float) tf.origin.z);
-	            Quaternion rot = new Quaternion((float) tf.basis.x, (float) tf.basis.y, (float) tf.basis.z, (float) tf.basis.w);
+	            Quaternion rot = new Quaternion((float) tf.basis.x, (float) tf.basis.y, (float) -tf.basis.z, (float) tf.basis.w);
                 /*if (rot != Quaternion.identity)
                     DebugText.WriteLine(""+tf.child_frame_id+" "+tf.basis);*/
 	            if (!tree.ContainsKey(tf.child_frame_id))
 	            {
-	                Transform newframe = (Transform) Instantiate(Template, pos, rot);
-	                tree[tf.child_frame_id] = newframe;
-	                tree[tf.child_frame_id].gameObject.GetComponentInChildren<TextMesh>().text = tf.child_frame_id;
-	            }
-	            if (tree.ContainsKey(tf.frame_id))
-	            {
-	                tree[tf.child_frame_id].SetParent(tree[tf.frame_id], false);
-	                tree[tf.child_frame_id].gameObject.SetActive(true);
-	            }
-	            else
-	                tree[tf.child_frame_id].gameObject.SetActive(false);
+	                Transform value1;
+	                if (tree.TryGetValue(tf.frame_id, out value1))
+	                    Template.SetParent(value1);
+	                else
+	                    Template.SetParent(Root.transform);
+
+                    Transform newframe = (Transform)Instantiate(Template, pos, rot);
+	                hideChildrenInHierarchy(newframe);
+#if UNITY_EDITOR
+	                ObjectNames.SetNameSmart(newframe, tf.child_frame_id);
+#endif
+                    tree[tf.child_frame_id] = newframe;
+                    tree[tf.child_frame_id].gameObject.GetComponentInChildren<TextMesh>().text = tf.child_frame_id;
+                }
+
+	            Transform value;
+	            if (tree.TryGetValue(tf.frame_id, out value))
+                {
+                    tree[tf.child_frame_id].SetParent(value, false);
+                    tree[tf.child_frame_id].gameObject.SetActive(true);
+                }
+                else
+                    tree[tf.child_frame_id].gameObject.SetActive(false);
+	            
 	            tree[tf.child_frame_id].localPosition = pos;
 	            tree[tf.child_frame_id].localRotation = rot;
 	        }

@@ -36,12 +36,11 @@ public class MapDisplay : MonoBehaviour
 	// Use this for initialization
     private void Start()
     {
-        if (ROSManager.GetComponent<ROSManager>().StartROS())
-        {
+        ROSManager.GetComponent<ROSManager>().StartROS(() => {
             nh = new NodeHandle();
             mapsub = nh.subscribe<OccupancyGrid>(map_topic, 1, mapcb);
             metadatasub = nh.subscribe<MapMetaData>(map_metadata_topic, 1, metadatacb);
-        }
+        });
     }
     private void SetDimensions(uint w, uint h, float res, Messages.geometry_msgs.Point position, Messages.geometry_msgs.Quaternion orientation)
     {

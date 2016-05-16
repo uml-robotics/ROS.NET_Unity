@@ -53,12 +53,12 @@ public class TfVisualizer : MonoBehaviour
         tree[FixedFrame] = Root;
         hideChildrenInHierarchy(Root);
 
-        if (ROSManager.GetComponent<ROSManager>().StartROS())
-	    {
-            nh = new NodeHandle();
-            tfstaticsub = nh.subscribe<Messages.tf.tfMessage>("/tf_static", 0, tf_callback, false);
-            tfsub = nh.subscribe<Messages.tf.tfMessage>("/tf", 0, tf_callback, false);
-	    }
+	    ROSManager.GetComponent<ROSManager>().StartROS(() =>
+	                                                       {
+	                                                           nh = new NodeHandle();
+	                                                           tfstaticsub = nh.subscribe<Messages.tf.tfMessage>("/tf_static", 0, tf_callback, false);
+	                                                           tfsub = nh.subscribe<Messages.tf.tfMessage>("/tf", 0, tf_callback, false);
+	                                                       });
     }
 
     private void tf_callback(tfMessage msg)

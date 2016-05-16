@@ -27,11 +27,25 @@ public class ROSManager : MonoBehaviour
     /// Call ROS.Init if it hasn't been called, and informs callers whether to try to make a nodehandle and pubs/subs
     /// </summary>
     /// <returns>Whether ros.net initialization can continue</returns>
-    public bool StartROS()
+    public void StartROS(Action whensuccessful)
     {
         MasterChooserController mcc = MasterChooser.GetComponent<MasterChooserController>();
 
-        if (mcc != null && !mcc.ShowIfNeeded())
+        if (mcc != null && !mcc.ShowIfNeeded(() => {
+#if UNITY_EDITOR
+            if (EditorApplication.isPlaying)
+            {
+#endif
+                if (!ROS.isStarted())
+                {
+                    ROS.Init(new string[0], "unity_test_" + DateTime.Now.Ticks);
+                    XmlRpcUtil.SetLogLevel(XmlRpcUtil.XMLRPC_LOG_LEVEL.ERROR);
+                }
+                whensuccessful();
+#if UNITY_EDITOR
+            }
+#endif
+        }))
         {
             Debug.LogError("Failed to test for applicability, show, or handle masterchooser input");
         }
@@ -72,20 +86,16 @@ public class ROSManager : MonoBehaviour
                 }
             }
         }
+        if (mcc == null || mcc.checkNeeded())
+            return;
 #if UNITY_EDITOR
         if (EditorApplication.isPlaying)
         {
 #endif
-            if (!ROS.isStarted())
-            {
-                ROS.Init(new string[0], "unity_test_" + DateTime.Now.Ticks);
-                XmlRpcUtil.SetLogLevel(XmlRpcUtil.XMLRPC_LOG_LEVEL.ERROR);
-            }
-            return true;
+            whensuccessful();
 #if UNITY_EDITOR
         }
 #endif
-        return false;
     }
 
     static void  Application_logMessageReceived(string condition, string stackTrace, LogType type)

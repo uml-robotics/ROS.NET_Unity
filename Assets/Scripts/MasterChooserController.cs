@@ -4,15 +4,15 @@ using Ros_CSharp;
 using UnityEngine;
 using UnityEngine.Events;
 using System.Collections;
+using UnityEngine.EventSystems;
 
 public class MasterChooserController : MonoBehaviour
 {
+    private List<Action> whendone = new List<Action>();
+    public Component master_uri_text;
+    public Component hostname_text;
 
-
-    public string master_uri;
-    public string hostname;
-
-    private bool checkNeeded()
+    public bool checkNeeded()
     {
         string[] args = new string[0];
         IDictionary remappings;
@@ -35,7 +35,8 @@ public class MasterChooserController : MonoBehaviour
 
     private bool show()
     {
-        gameObject.SetActive(true);
+        if (!gameObject.activeInHierarchy)
+            gameObject.SetActive(true);
         return true;
     }
 
@@ -43,9 +44,11 @@ public class MasterChooserController : MonoBehaviour
     {
         try
         {
-            ROS.ROS_MASTER_URI = master_uri;
-            ROS.ROS_HOSTNAME = hostname;
+            ROS.ROS_MASTER_URI = master_uri_text.GetComponent<UnityEngine.UI.Text>().text;
+            ROS.ROS_HOSTNAME = hostname_text.GetComponent<UnityEngine.UI.Text>().text;
             hide();
+            foreach (var a in whendone)
+                a();
             return true;
         }
         catch (Exception ex)
@@ -58,25 +61,19 @@ public class MasterChooserController : MonoBehaviour
     private void hide()
     {
         gameObject.SetActive(false);
+        transform.root.GetComponentInChildren<EventSystem>().gameObject.SetActive(false);
     }
 
-    public bool ShowIfNeeded()
+    public bool ShowIfNeeded(Action whendone)
     {
         if (checkNeeded())
         {
+            lock(whendone)
+                this.whendone.Add(whendone);
             return show();
         }
+        whendone();
         return true;
-    }
-
-    public void MasterURIChanged(string s)
-    {
-        master_uri = s;
-    }
-
-    public void HostnameChanged(string s)
-    {
-        hostname = s;
     }
 
     public void ButtonClicked()

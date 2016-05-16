@@ -32,11 +32,11 @@ public class CompressedImageDisplay : MonoBehaviour
     private void Start()
     {
         renderer = GetComponent<MeshRenderer>();
-        if (ROSManager.GetComponent<ROSManager>().StartROS())
-        {
-            nh = new NodeHandle();
-            mapsub = nh.subscribe<CompressedImage>(map_topic, 1, mapcb);
-        }
+        ROSManager.GetComponent<ROSManager>().StartROS(() =>
+                                                           {
+                                                               nh = new NodeHandle();
+                                                               mapsub = nh.subscribe<CompressedImage>(map_topic, 1, mapcb);
+                                                           });
     }
 
     private void mapcb(CompressedImage msg)

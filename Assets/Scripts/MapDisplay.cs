@@ -31,10 +31,12 @@ public class MapDisplay : MonoBehaviour
 
     private AutoResetEvent textureMutex = new AutoResetEvent(false);
 
+    public ROSManager ROSManager;
+
 	// Use this for initialization
     private void Start()
     {
-        if (ROSManager.StartROS())
+        if (ROSManager.GetComponent<ROSManager>().StartROS())
         {
             nh = new NodeHandle();
             mapsub = nh.subscribe<OccupancyGrid>(map_topic, 1, mapcb);

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using JetBrains.Annotations;
 using Ros_CSharp;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -17,6 +18,8 @@ using XmlRpc_Wrapper;
 /// </summary>
 public class ROSManager : MonoBehaviour
 {
+    public Component MasterChooser;
+
     private static object loggerlock = new object();
     private static StreamWriter logwriter = null;
 
@@ -24,8 +27,14 @@ public class ROSManager : MonoBehaviour
     /// Call ROS.Init if it hasn't been called, and informs callers whether to try to make a nodehandle and pubs/subs
     /// </summary>
     /// <returns>Whether ros.net initialization can continue</returns>
-    public static bool StartROS()
+    public bool StartROS()
     {
+        MasterChooserController mcc = MasterChooser.GetComponent<MasterChooserController>();
+
+        if (mcc != null && !mcc.ShowIfNeeded())
+        {
+            Debug.LogError("Failed to test for applicability, show, or handle masterchooser input");
+        }
         lock (loggerlock)
         {
             if (logwriter == null)

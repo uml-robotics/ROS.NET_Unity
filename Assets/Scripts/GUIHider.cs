@@ -27,7 +27,7 @@ public class GUIHider : MonoBehaviour
 
     public bool HideInEditor;
     public bool HideAlways;
-    private Canvas canvas = null;
+    private GameObject parent = null;
 
 	static void EditorUpdate () {
 	    lock (_instances)
@@ -35,22 +35,29 @@ public class GUIHider : MonoBehaviour
 	        Queue<GUIHider> deadmeat = new Queue<GUIHider>();
 	        foreach (GUIHider hider in _instances)
 	        {
-	            if (hider.canvas == null)
+	            if (hider.parent == null)
 	                try
 	                {
-	                    hider.canvas = hider.GetComponent<Canvas>();
+	                    hider.parent = hider.gameObject;
 	                }
 	                catch (Exception)
 	                {
 	                    deadmeat.Enqueue(hider);
 	                }
-	            if (hider.canvas != null)
-	                hider.canvas.enabled =         
+	            if (hider.parent != null)
+	            {
+	                bool desired = 
 #if UNITY_EDITOR
-                        !hider.HideAlways && (EditorApplication.isPlaying || !hider.HideInEditor);
+	                    !hider.HideAlways && (EditorApplication.isPlaying || !hider.HideInEditor);
 #else
                         !hider.HideAlways;
 #endif
+	                bool current = hider.parent.activeSelf;
+	                if (current != desired)
+	                {
+	                    hider.parent.SetActive(desired);
+	                }
+	            }
 	        }
 	        while (deadmeat.Count > 0)
 	        {

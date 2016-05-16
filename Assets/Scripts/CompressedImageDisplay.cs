@@ -14,6 +14,7 @@ using System.Collections;
 public class CompressedImageDisplay : MonoBehaviour
 {
     public string map_topic;
+    public Component ROSManager;
 
     private NodeHandle nh = null;
     private Subscriber<CompressedImage> mapsub;
@@ -31,7 +32,7 @@ public class CompressedImageDisplay : MonoBehaviour
     private void Start()
     {
         renderer = GetComponent<MeshRenderer>();
-        if (ROSManager.StartROS())
+        if (ROSManager.GetComponent<ROSManager>().StartROS())
         {
             nh = new NodeHandle();
             mapsub = nh.subscribe<CompressedImage>(map_topic, 1, mapcb);

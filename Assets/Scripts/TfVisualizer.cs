@@ -27,6 +27,7 @@ public class TfVisualizer : MonoBehaviour
     public Transform Root;
 
     public string FixedFrame;
+    public ROSManager ROSManager;
 
     private Dictionary<string, Transform> tree = new Dictionary<string, Transform>();
 
@@ -52,7 +53,7 @@ public class TfVisualizer : MonoBehaviour
         tree[FixedFrame] = Root;
         hideChildrenInHierarchy(Root);
 
-	    if (ROSManager.StartROS())
+        if (ROSManager.GetComponent<ROSManager>().StartROS())
 	    {
             nh = new NodeHandle();
             tfstaticsub = nh.subscribe<Messages.tf.tfMessage>("/tf_static", 0, tf_callback, false);
@@ -116,7 +117,7 @@ public class TfVisualizer : MonoBehaviour
 	                else
 	                    Template.SetParent(Root.transform);
 
-                    Transform newframe = (Transform)Instantiate(Template, pos, rot);
+                    Transform newframe = (Transform)Instantiate(Template, Template.localPosition, Template.localRotation);
 	                hideChildrenInHierarchy(newframe);
 #if UNITY_EDITOR
 	                ObjectNames.SetNameSmart(newframe, tf.child_frame_id);

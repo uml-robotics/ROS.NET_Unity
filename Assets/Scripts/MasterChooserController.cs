@@ -16,14 +16,20 @@ public class MasterChooserController : MonoBehaviour
     {
         string[] args = new string[0];
         IDictionary remappings;
-        if (RemappingHelper.GetRemappings(ref args, out remappings))
+
+        try
         {
-            if (remappings.Contains("__master"))
+            if (RemappingHelper.GetRemappings(ref args, out remappings))
             {
-                return false;
+                if (remappings.Contains("__master"))
+                {
+                    return false;
+                }
             }
         }
-        
+        catch(Exception ex)
+        {
+        }
         return string.IsNullOrEmpty(ROS.ROS_MASTER_URI);
     }
 

@@ -56,8 +56,8 @@ public class TfVisualizer : MonoBehaviour
 	    ROSManager.GetComponent<ROSManager>().StartROS(() =>
 	                                                       {
 	                                                           nh = new NodeHandle();
-	                                                           tfstaticsub = nh.subscribe<Messages.tf.tfMessage>("/tf_static", 0, tf_callback, false);
-	                                                           tfsub = nh.subscribe<Messages.tf.tfMessage>("/tf", 0, tf_callback, false);
+	                                                           tfstaticsub = nh.subscribe<Messages.tf.tfMessage>("/tf_static", 0, tf_callback, true);
+	                                                           tfsub = nh.subscribe<Messages.tf.tfMessage>("/tf", 0, tf_callback, true);
 	                                                       });
     }
 
@@ -95,49 +95,49 @@ public class TfVisualizer : MonoBehaviour
 	            transforms.Clear();
 	        }
 	    }
-	    emTransform tf = null;
 	    while (tfs != null && tfs.Count > 0)
 	    {
-	        tf = new emTransform(tfs.Dequeue().transforms[0]);
-            if (!tf.frame_id.StartsWith("/"))
-                tf.frame_id = "/"+tf.frame_id;
-            if (!tf.child_frame_id.StartsWith("/"))
-                tf.child_frame_id = "/"+tf.child_frame_id;
-	        if (IsVisible(tf.child_frame_id))
-	        {
-	            Vector3 pos = new Vector3((float) -tf.origin.x, (float) tf.origin.y, (float) tf.origin.z);
-	            Quaternion rot = new Quaternion((float) tf.basis.x, (float) tf.basis.y, (float) -tf.basis.z, (float) tf.basis.w);
-                /*if (rot != Quaternion.identity)
-                    DebugText.WriteLine(""+tf.child_frame_id+" "+tf.basis);*/
-	            if (!tree.ContainsKey(tf.child_frame_id))
-	            {
-	                Transform value1;
-	                if (tree.TryGetValue(tf.frame_id, out value1))
-	                    Template.SetParent(value1);
-	                else
-	                    Template.SetParent(Root.transform);
-
-                    Transform newframe = (Transform)Instantiate(Template, Template.localPosition, Template.localRotation);
-	                hideChildrenInHierarchy(newframe);
-#if UNITY_EDITOR
-	                ObjectNames.SetNameSmart(newframe, tf.child_frame_id);
-#endif
-                    tree[tf.child_frame_id] = newframe;
-                    tree[tf.child_frame_id].gameObject.GetComponentInChildren<TextMesh>().text = tf.child_frame_id;
-                }
-
-	            Transform value;
-	            if (tree.TryGetValue(tf.frame_id, out value))
+	        emTransform[] tfz = Array.ConvertAll<gm.TransformStamped, emTransform>(tfs.Dequeue().transforms, (a) => new emTransform(a));
+            foreach (emTransform tf in tfz)
+            {
+                if (!tf.frame_id.StartsWith("/"))
+                    tf.frame_id = "/" + tf.frame_id;
+                if (!tf.child_frame_id.StartsWith("/"))
+                    tf.child_frame_id = "/" + tf.child_frame_id;
+                if (IsVisible(tf.child_frame_id))
                 {
-                    tree[tf.child_frame_id].SetParent(value, false);
-                    tree[tf.child_frame_id].gameObject.SetActive(true);
+                    Vector3 pos = new Vector3((float)-tf.origin.x, (float)tf.origin.y, (float)tf.origin.z);
+                    Quaternion rot = new Quaternion((float)(tf.basis.x/tf.basis.w), (float)(-tf.basis.y/tf.basis.w), (float)(-tf.basis.z/tf.basis.w), 1.0f);
+                    if (!tree.ContainsKey(tf.child_frame_id))
+                    {
+                        Transform value1;
+                        if (tree.TryGetValue(tf.frame_id, out value1))
+                            Template.SetParent(value1);
+                        else
+                            Template.SetParent(Root.transform);
+
+                        Transform newframe = (Transform)Instantiate(Template, Template.localPosition, Template.localRotation);
+                        hideChildrenInHierarchy(newframe);
+#if UNITY_EDITOR
+                        ObjectNames.SetNameSmart(newframe, tf.child_frame_id);
+#endif
+                        tree[tf.child_frame_id] = newframe;
+                        tree[tf.child_frame_id].gameObject.GetComponentInChildren<TextMesh>().text = tf.child_frame_id;
+                    }
+
+                    Transform value;
+                    if (tree.TryGetValue(tf.frame_id, out value))
+                    {
+                        tree[tf.child_frame_id].SetParent(value, false);
+                        tree[tf.child_frame_id].gameObject.SetActive(true);
+                    }
+                    else
+                        tree[tf.child_frame_id].gameObject.SetActive(false);
+
+                    tree[tf.child_frame_id].localPosition = pos;
+                    tree[tf.child_frame_id].localRotation = rot;
                 }
-                else
-                    tree[tf.child_frame_id].gameObject.SetActive(false);
-	            
-	            tree[tf.child_frame_id].localPosition = pos;
-	            tree[tf.child_frame_id].localRotation = rot;
-	        }
-	    }
+            }
+        }
 	}
 }

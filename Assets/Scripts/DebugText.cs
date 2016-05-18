@@ -36,7 +36,7 @@ public class DebugText : MonoBehaviour
 	        {
                 if (lines.Count > 10)
                     lines.Dequeue();
-	            lines.Enqueue(additions.Dequeue() + "\r\n");
+	            lines.Enqueue(additions.Dequeue());
                 changedlines = true;
 	        }
             if (changedlines && debugtext != null)
@@ -48,13 +48,9 @@ public class DebugText : MonoBehaviour
     {
         if (Instance != null)
         {
-            string[] newones = string.Format(fmt, args).Split(new []{'\n'}, StringSplitOptions.None);
             lock (Instance.additions)
             {
-                foreach (string s in newones)
-                {
-                    Instance.additions.Enqueue(s);
-                }
+                Instance.additions.Enqueue(string.Format(fmt, args));
             }
         }
     }

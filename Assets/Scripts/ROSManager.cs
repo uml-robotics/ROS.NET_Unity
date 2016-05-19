@@ -30,8 +30,8 @@ public class ROSManager : MonoBehaviour
     public void StartROS(Action whensuccessful)
     {
         MasterChooserController mcc = MasterChooser.GetComponent<MasterChooserController>();
-
-        if (mcc != null && !mcc.ShowIfNeeded(() => {
+        
+        Action whatToDo = () => {
 #if UNITY_EDITOR
             if (EditorApplication.isPlaying)
             {
@@ -45,10 +45,17 @@ public class ROSManager : MonoBehaviour
 #if UNITY_EDITOR
             }
 #endif
-        }))
+        };
+
+        if (mcc == null || !mcc.checkNeeded())
+        {
+            whatToDo();
+        }
+        else if (!mcc.ShowIfNeeded(whatToDo))
         {
             Debug.LogError("Failed to test for applicability, show, or handle masterchooser input");
         }
+
         lock (loggerlock)
         {
             if (logwriter == null)
@@ -86,16 +93,6 @@ public class ROSManager : MonoBehaviour
                 }
             }
         }
-        if (mcc == null || mcc.checkNeeded())
-            return;
-#if UNITY_EDITOR
-        if (EditorApplication.isPlaying)
-        {
-#endif
-            whensuccessful();
-#if UNITY_EDITOR
-        }
-#endif
     }
 
     static void  Application_logMessageReceived(string condition, string stackTrace, LogType type)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using JetBrains.Annotations;
+using Ros_CSharp;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
@@ -32,6 +33,9 @@ public class TimeText : MonoBehaviour
     void Update()
     {
         if (timetext != null)
+        {
             timetext.text = DateTime.Now.Subtract(startTime).ToString();
+            ROS.Info(timetext.text);
+        }
     }
 }

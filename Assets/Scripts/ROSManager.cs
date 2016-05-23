@@ -40,6 +40,7 @@ public class ROSManager : MonoBehaviour
                 {
                     ROS.Init(new string[0], "unity_test_" + DateTime.Now.Ticks);
                     XmlRpcUtil.SetLogLevel(XmlRpcUtil.XMLRPC_LOG_LEVEL.ERROR);
+                    tf.net.Transformer.LateInit();
                 }
                 whensuccessful();
 #if UNITY_EDITOR

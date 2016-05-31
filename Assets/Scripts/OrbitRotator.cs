@@ -144,6 +144,6 @@ public class OrbitRotator : MonoBehaviour
 
         // update the actual gameobject's rotation
         Pivot.transform.localRotation = m_OriginalRotation * Quaternion.Euler(-m_FollowAngles.x, 0, 0);
-        transform.localRotation = m_OriginalOrbitRotation * Quaternion.Euler(0, 0, -m_FollowAngles.y);
+        transform.localRotation = m_OriginalOrbitRotation * Quaternion.Euler(0,m_FollowAngles.y,0);
     }
 }

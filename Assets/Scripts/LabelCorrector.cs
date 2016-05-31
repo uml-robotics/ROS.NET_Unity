@@ -14,5 +14,6 @@ public class LabelCorrector : MonoBehaviour
 	void Update ()
 	{
 	    transform.LookAt(target.transform, target.transform.up);
+	    transform.Rotate(new Vector3(0f, 1f, 0f), 180);
 	}
 }

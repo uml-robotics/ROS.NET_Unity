@@ -24,7 +24,7 @@ public class LaserScanView : MonoBehaviour
 
     internal void expire()
     {
-        // gameObject.hideFlags |= HideFlags.HideAndDontSave;
+        gameObject.hideFlags |= HideFlags.HideAndDontSave;
         if (IDied != null)
             IDied(gameObject);
     }
@@ -61,7 +61,7 @@ public class LaserScanView : MonoBehaviour
         if (changed)
         {
             //show if hidden (this scan was recycled)
-            // hideFlags &= ~HideFlags.HideAndDontSave;
+            hideFlags &= ~HideFlags.HideAndDontSave;
 
             #region RESIZE IF NEEDED, ADD+REMOVE SPHERES AS NEEDED
             //resize sphere array if different from distbuffer
@@ -107,7 +107,7 @@ public class LaserScanView : MonoBehaviour
             {
                 pointBuffer[i].transform.localScale = new Vector3(pointSize, pointSize, pointSize);
                 //TODO: SET THE POSITION for pointBuffer[i] based on distBuffer[i]
-                pointBuffer[i].transform.localPosition = new Vector3((float)(distBuffer[i] * Math.Sin(angMin + angInc * i)), 1F, (float)(distBuffer[i] * Math.Cos(angMin + angInc * i)));
+                pointBuffer[i].transform.localPosition = new Vector3((float)(distBuffer[i] * Math.Cos(angMin + angInc * i)), 1F, (float)(distBuffer[i] * Math.Sin(angMin + angInc * i)));
             }
             #endregion
             changed = false;

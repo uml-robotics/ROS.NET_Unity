@@ -11,7 +11,7 @@ public class LaserVisController : MonoBehaviour
     private NodeHandle nh = null;
     private Subscriber<LaserScan> scansub;
     SortedList<DateTime, LaserScan> toDraw = new SortedList<DateTime, LaserScan>();
-    List<GameObject> recycle = new List<GameObject>();
+    List<GameObject> recycle = new List< GameObject>();
 
     private GameObject points;
 
@@ -30,7 +30,7 @@ public class LaserVisController : MonoBehaviour
 
         //get the TEMPLATE view (our only child 
         points = transform.GetChild(0).gameObject;
-        //points.hideFlags |= HideFlags.HideAndDontSave;
+        points.hideFlags |= HideFlags.HideAndDontSave;
         points.name = "Points";
     }
 
@@ -66,7 +66,7 @@ public class LaserVisController : MonoBehaviour
 
                 if (transform.childCount > 1)
                 {
-                    //transform.GetChild(1).gameObject.hideFlags |= HideFlags.DontSaveInBuild;
+                    transform.GetChild(1).gameObject.hideFlags |= HideFlags.DontSaveInBuild;
                     lock (recycle)
                         recycle.Add(transform.GetChild(1).gameObject);
                 }
@@ -90,7 +90,7 @@ public class LaserVisController : MonoBehaviour
                     if (recycle.Count > 0)
                     {
                         need_a_new_one = false;
-                        newone = recycle[0];
+                        newone = recycle.ElementAt(0);
                         recycle.RemoveAt(0);
                         if (decay_time < 0.0001f)
                             recycle.Clear();

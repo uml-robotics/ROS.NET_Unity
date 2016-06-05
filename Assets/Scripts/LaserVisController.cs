@@ -31,6 +31,7 @@ public class LaserVisController : MonoBehaviour
         //get the TEMPLATE view (our only child 
         points = transform.GetChild(0).gameObject;
         points.hideFlags |= HideFlags.HideAndDontSave;
+        points.SetActive(true);
         points.name = "Points";
     }
 
@@ -66,7 +67,8 @@ public class LaserVisController : MonoBehaviour
 
                 if (transform.childCount > 1)
                 {
-                    transform.GetChild(1).gameObject.hideFlags |= HideFlags.DontSaveInBuild;
+                    //transform.GetChild(1).gameObject.SetActive(false);
+                    //transform.GetChild(1).gameObject.hideFlags |= HideFlags.HideAndDontSave;
                     lock (recycle)
                         recycle.Add(transform.GetChild(1).gameObject);
                 }
@@ -100,6 +102,7 @@ public class LaserVisController : MonoBehaviour
                 {
                     newone = Instantiate(points.transform).gameObject;
                     newone.transform.SetParent(transform, false);
+                    newone.hideFlags |= HideFlags.HideAndDontSave;
                     //newone = ((instantiate a copy of the template))
                     newone.GetComponent<LaserScanView>().IDied += (deadScan) =>
                     {

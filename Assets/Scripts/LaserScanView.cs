@@ -24,7 +24,8 @@ public class LaserScanView : MonoBehaviour
 
     internal void expire()
     {
-        gameObject.hideFlags |= HideFlags.HideAndDontSave;
+        // gameObject.hideFlags |= HideFlags.HideAndDontSave;
+        gameObject.SetActive(false);
         if (IDied != null)
             IDied(gameObject);
     }
@@ -33,6 +34,7 @@ public class LaserScanView : MonoBehaviour
     {
         //compare length of distbuffer and msg.ranges
         //recreate distance array
+        gameObject.SetActive(true);
         angMin = msg.angle_min;
         angInc = msg.angle_increment;
         birthday = msgreceived;

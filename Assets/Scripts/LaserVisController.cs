@@ -20,6 +20,7 @@ public class LaserVisController : MonoBehaviour
     public float pointSize = 1;
     public uint maxRecycle = 100;
     public float Decay_Time = 0f;
+    private float old_Decay;
     public bool Debug_Messages = false;
 
     // Use this for initialization
@@ -35,6 +36,8 @@ public class LaserVisController : MonoBehaviour
         points.hideFlags |= HideFlags.HideAndDontSave;
         points.SetActive(false);
         points.name = "Points";
+
+        old_Decay = Decay_Time;
     }
 
     private void scancb(LaserScan argument)
@@ -52,7 +55,7 @@ public class LaserVisController : MonoBehaviour
             Debug.Log("Ranges_size: " + argument.ranges.Length.ToString());
             */
 
-        if (toDraw.Count > 2 && Debug_Messages)
+        if (countToDraw() > 2 && Debug_Messages)
         {
             DebugText.WriteLine("First Element: " + toDraw.ElementAt(0).Key.ToString());
             DebugText.WriteLine("Last Element: " + toDraw.Last().Key.ToString());
@@ -64,16 +67,20 @@ public class LaserVisController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+        if(Decay_Time != old_Decay)
+        {
+            old_Decay = Decay_Time;
+        }
 
         if (Decay_Time < 0.0001f)
         {
            
-            while (toDraw.Count > 1)
+            while (countToDraw() > 1)
             {
                 remFirstFromToDraw();
+                
             }
-            
+
             if (transform.childCount > 1)
             {
                 //transform.GetChild(1).gameObject.SetActive(false);
@@ -93,20 +100,16 @@ public class LaserVisController : MonoBehaviour
                 }
             }
         }
-        while (toDraw.Count > 0)
+        
+
+     
+
+        while (countToDraw() > 0)
         {
             GameObject newone = null;
             bool need_a_new_one = true;
-
-            int recycle_count;
-
-            lock (recycle)
-            {
-                recycle_count = recycle.Count;
-            }
-
-
-            if (recycle_count > 0)
+ 
+            if (countRecycle() > 0)
             {
                 need_a_new_one = false;
                 newone = remFirstFromRecycle();
@@ -132,13 +135,11 @@ public class LaserVisController : MonoBehaviour
                     remFromRecycle(deadScan);
                     deadScan.transform.SetParent(null); //disconnect from parent
                     Destroy(deadScan); //destroy object
-
                 };
             }
 
             KeyValuePair<uint, LaserScan> oldest = remFirstFromToDraw();
             newone.GetComponent<LaserScanView>().SetScan(Time.fixedTime, oldest.Value);
-
 
         }
 
@@ -162,13 +163,30 @@ public class LaserVisController : MonoBehaviour
     KeyValuePair<uint, LaserScan> remFirstFromToDraw()
     {
         KeyValuePair<uint, LaserScan> scanSeqPairOut;
+        KeyValuePair<uint, LaserScan> something = default(KeyValuePair<uint, LaserScan>);
         lock (toDraw)
         {
-            scanSeqPairOut = toDraw.First();
-            toDraw.Remove(scanSeqPairOut.Key);
+            scanSeqPairOut = toDraw.FirstOrDefault();
+            if (!scanSeqPairOut.Equals(something))
+            {
+                toDraw.Remove(scanSeqPairOut.Key);
+            }
         }
         return scanSeqPairOut;
     }
+
+    int countToDraw()
+    {
+        int count;
+
+        lock (toDraw)
+        {
+            count = toDraw.Count;
+        }
+
+        return count;
+    }
+
     #endregion
 
     #region Recycle interface
@@ -186,10 +204,13 @@ public class LaserVisController : MonoBehaviour
         lock (recycle)
         {
             //recycle.Add(gameObjIn);
-            gameObjOut = recycle.First();
-            recycle.RemoveAt(0);
+            gameObjOut = recycle.FirstOrDefault().gameObject;
+            if (!gameObjOut.Equals(default(GameObject)))
+            {
+                recycle.RemoveAt(0);
+            }
         }
-        return gameObject;
+        return gameObjOut;
     }
 
     void remFromRecycle(GameObject gameObjOut)
@@ -206,6 +227,18 @@ public class LaserVisController : MonoBehaviour
         lock(recycle)
             recycle.Clear();
 
+    }
+
+    int countRecycle()
+    {
+        int count;
+
+        lock (recycle)
+        {
+            count = recycle.Count;
+        }
+
+        return count;
     }
     #endregion
 }

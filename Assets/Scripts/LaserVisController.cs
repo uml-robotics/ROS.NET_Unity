@@ -67,10 +67,12 @@ public class LaserVisController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        
         if(Decay_Time != old_Decay)
         {
             old_Decay = Decay_Time;
         }
+        
 
         if (Decay_Time < 0.0001f)
         {

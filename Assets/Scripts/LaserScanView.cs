@@ -89,8 +89,8 @@ public class LaserScanView : MonoBehaviour
             #region SHOULD I DIE?
             if (recycleCount > maxRecycle)
             {
-                expire();
-                return;
+               // expire();
+                //return;
             }
             #endregion
 

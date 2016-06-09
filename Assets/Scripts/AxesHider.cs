@@ -2,19 +2,18 @@
 using System.Collections;
 using System;
 
-public class LabelCorrector : MonoBehaviour
-{
-    public GameObject target;
+public class AxesHider : MonoBehaviour {
+
     private static event Action<bool> updatevis;
     private bool visstate;
     private static bool lastvisstate = false;
     private static object initlock = new object();
-
+    private bool mylastvisstate = true;
 
     // Use this for initialization
-    void Start ()
+    void Start()
     {
-        lock (initlock)
+        lock(initlock)
             updatevis += _update;
         visstate = lastvisstate;
     }
@@ -31,11 +30,16 @@ public class LabelCorrector : MonoBehaviour
         visstate = state;
     }
 
-    // Update is called once per frame
-    void Update ()
+    void Update()
     {
-        gameObject.GetComponentInChildren<MeshRenderer>().enabled = visstate;
-        transform.LookAt(target.transform, target.transform.up);
-	    transform.Rotate(new Vector3(0f, 1f, 0f), 180);
-	}
+        if (mylastvisstate != visstate)
+        {
+            mylastvisstate = visstate;
+            MeshRenderer[] rends = gameObject.GetComponentsInChildren<MeshRenderer>();
+            foreach (MeshRenderer m in rends)
+            {
+                m.enabled = visstate;
+            }
+        }
+    }
 }

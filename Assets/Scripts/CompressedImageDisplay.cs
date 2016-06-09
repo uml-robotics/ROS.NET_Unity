@@ -13,7 +13,19 @@ using System.Collections;
 
 public class CompressedImageDisplay : MonoBehaviour
 {
-    public string map_topic;
+    private string _topic;
+    public string topic { get { return _topic; }
+        set { if (value == null || value.Length == 0) return;
+            _topic = value;
+            image_topic = _topic;
+            if (nh != null) {
+                if (mapsub != null) {
+                    mapsub.unsubscribe();
+                    mapsub.shutdown();
+                }
+                mapsub = nh.subscribe<CompressedImage>(topic, 1, mapcb);
+            } } }
+    public string image_topic;
     public Component ROSManager;
 
     private NodeHandle nh = null;
@@ -35,7 +47,10 @@ public class CompressedImageDisplay : MonoBehaviour
         ROSManager.GetComponent<ROSManager>().StartROS(() =>
                                                            {
                                                                nh = new NodeHandle();
-                                                               mapsub = nh.subscribe<CompressedImage>(map_topic, 1, mapcb);
+                                                               if (image_topic != null && image_topic.Length > 0)
+                                                                   topic = image_topic;
+                                                               else
+                                                                   topic = topic;
                                                            });
     }
 
@@ -47,6 +62,8 @@ public class CompressedImageDisplay : MonoBehaviour
 
     // Update is called once per frame
 	void Update () {
+        if (image_topic != topic)
+            topic = image_topic;
 	    if (textureMutex.WaitOne(0))
 	    {
 	        if (mapTexture == null)

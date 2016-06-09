@@ -11,6 +11,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 using Ros_CSharp;
+using System.Linq;
 
 public class TfVisualizer : MonoBehaviour
 {
@@ -28,17 +29,22 @@ public class TfVisualizer : MonoBehaviour
 
     public string FixedFrame;
     public ROSManager ROSManager;
+    public bool show_labels;
+    public bool show_lines;
+    public bool show_axes;
+    public float axis_scale = 1.0f;
+    private float _axis_scale = 1.0f;
 
     private Dictionary<string, Transform> tree = new Dictionary<string, Transform>();
 
-    private void hideChildrenInHierarchy(Transform trans)
+    public static void hideChildrenInHierarchy(Transform trans)
     {
         for (int i = 0; i < trans.childCount; i++)
             trans.GetChild(i).hideFlags |= HideFlags.HideInHierarchy;
     }
 
     // Use this for initialization
-	void Start ()
+    void Start ()
     {
         if (Template != null)
         {
@@ -56,8 +62,8 @@ public class TfVisualizer : MonoBehaviour
 	    ROSManager.GetComponent<ROSManager>().StartROS(() =>
 	                                                       {
 	                                                           nh = new NodeHandle();
-	                                                           tfstaticsub = nh.subscribe<Messages.tf.tfMessage>("/tf_static", 0, tf_callback, true);
-	                                                           tfsub = nh.subscribe<Messages.tf.tfMessage>("/tf", 0, tf_callback, true);
+	                                                           tfstaticsub = nh.subscribe<Messages.tf.tfMessage>("/tf_static", 0, tf_callback);
+	                                                           tfsub = nh.subscribe<Messages.tf.tfMessage>("/tf", 0, tf_callback);
 	                                                       });
     }
 
@@ -67,13 +73,6 @@ public class TfVisualizer : MonoBehaviour
         {
             transforms.Enqueue(msg);
             DateTime now = DateTime.Now;
-            count++;
-            if (now.Subtract(last).TotalMilliseconds > 1000)
-            {
-                lasthz = count;
-                count = 0;
-                last = now;
-            }
         }
     }
 
@@ -86,58 +85,83 @@ public class TfVisualizer : MonoBehaviour
     // Update is called once per frame
 	void Update ()
 	{
-	    Queue<Messages.tf.tfMessage> tfs = null;
+        //only handle one message per frame per update
+	    Dictionary<string, gm.TransformStamped> tfs = new Dictionary<string, gm.TransformStamped>();
 	    lock (transforms)
 	    {
-	        if (transforms.Count > 0)
-	        {
-	            tfs = new Queue<tfMessage>(transforms);
-	            transforms.Clear();
-	        }
-	    }
-	    while (tfs != null && tfs.Count > 0)
-	    {
-	        emTransform[] tfz = Array.ConvertAll<gm.TransformStamped, emTransform>(tfs.Dequeue().transforms, (a) => new emTransform(a));
-            foreach (emTransform tf in tfz)
+            while(transforms.Count > 0)
             {
-                if (!tf.frame_id.StartsWith("/"))
-                    tf.frame_id = "/" + tf.frame_id;
-                if (!tf.child_frame_id.StartsWith("/"))
-                    tf.child_frame_id = "/" + tf.child_frame_id;
-                if (IsVisible(tf.child_frame_id))
+                Messages.tf.tfMessage tm = transforms.Dequeue();
+                foreach (gm.TransformStamped t in tm.transforms)
                 {
-                    Vector3 pos = tf.UnityPosition.Value;
-                    Quaternion rot = tf.UnityRotation.Value;
-                    if (!tree.ContainsKey(tf.child_frame_id))
-                    {
-                        Transform value1;
-                        if (tree.TryGetValue(tf.frame_id, out value1))
-                            Template.SetParent(value1);
-                        else
-                            Template.SetParent(Root.transform);
-
-                        Transform newframe = (Transform)Instantiate(Template, Template.localPosition, Template.localRotation);
-                        hideChildrenInHierarchy(newframe);
-#if UNITY_EDITOR
-                        ObjectNames.SetNameSmart(newframe, tf.child_frame_id);
-#endif
-                        tree[tf.child_frame_id] = newframe;
-                        tree[tf.child_frame_id].gameObject.GetComponentInChildren<TextMesh>().text = tf.child_frame_id;
-                    }
-
-                    Transform value;
-                    if (tree.TryGetValue(tf.frame_id, out value))
-                    {
-                        tree[tf.child_frame_id].SetParent(value, false);
-                        tree[tf.child_frame_id].gameObject.SetActive(true);
-                    }
-                    else
-                        tree[tf.child_frame_id].gameObject.SetActive(false);
-
-                    tree[tf.child_frame_id].localPosition = pos;
-                    tree[tf.child_frame_id].localRotation = rot;
+                    tfs[t.child_frame_id] = t;
                 }
             }
+	    }
+        
+        emTransform[] tfz = Array.ConvertAll<gm.TransformStamped, emTransform>(tfs.Values.ToArray(), (a) => new emTransform(a));
+        foreach (emTransform tf in tfz)
+        {
+            if (!tf.frame_id.StartsWith("/"))
+                tf.frame_id = "/" + tf.frame_id;
+            if (!tf.child_frame_id.StartsWith("/"))
+                tf.child_frame_id = "/" + tf.child_frame_id;
+            if (IsVisible(tf.child_frame_id))
+            {
+                Vector3 pos = tf.UnityPosition.Value;
+                Quaternion rot = tf.UnityRotation.Value;
+                if (!tree.ContainsKey(tf.child_frame_id))
+                {
+                    Transform value1;
+                    if (tree.TryGetValue(tf.frame_id, out value1))
+                        Template.SetParent(value1);
+                    else
+                        Template.SetParent(Root.transform);
+
+                    Transform newframe = (Transform)Instantiate(Template, Template.localPosition, Template.localRotation);
+                    hideChildrenInHierarchy(newframe);
+#if UNITY_EDITOR
+                    ObjectNames.SetNameSmart(newframe, tf.child_frame_id);
+#endif
+                    tree[tf.child_frame_id] = newframe;
+                    tree[tf.child_frame_id].gameObject.GetComponentInChildren<TextMesh>().text = tf.child_frame_id;
+                }
+
+                Transform value;
+                if (tree.TryGetValue(tf.frame_id, out value))
+                {
+                    tree[tf.child_frame_id].SetParent(value, false);
+                    tree[tf.child_frame_id].gameObject.SetActive(true);
+                }
+                else
+                    tree[tf.child_frame_id].gameObject.SetActive(false);
+
+                tree[tf.child_frame_id].localPosition = pos;
+                tree[tf.child_frame_id].localRotation = rot;
+            }
         }
-	}
+
+        AxesHider.update(show_axes);
+        LabelCorrector.update(show_labels);
+        TransformLineConnector.update(show_lines);
+        if (show_axes && Math.Abs(_axis_scale - axis_scale) > 0.001 && axis_scale > 0.001)
+        {
+            _axis_scale = axis_scale;
+            foreach (GameObject go in GameObject.FindGameObjectsWithTag("TFAxis"))
+            {
+                go.transform.localScale = new Vector3(axis_scale, axis_scale, axis_scale);
+                /*if (go.transform.parent.gameObject != Root)
+                {
+                    for (int i = 0; i < go.transform.parent.childCount; i++)
+                    {
+                        if (i != go.transform.GetSiblingIndex())
+                        {
+                            go.transform.parent.GetChild(i).localScale = new Vector3(1.0f / axis_scale, 1.0f / axis_scale, 1.0f / axis_scale);
+                        }
+                    }
+                    go.transform.parent.localScale = new Vector3(1.0f / axis_scale, 1.0f / axis_scale, 1.0f / axis_scale);
+                }*/
+            }
+        }
+    }
 }

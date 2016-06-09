@@ -127,7 +127,7 @@ public class TfVisualizer : MonoBehaviour
                     tree[tf.child_frame_id] = newframe;
                     tree[tf.child_frame_id].gameObject.GetComponentInChildren<TextMesh>().text = tf.child_frame_id;
 
-                    if (tf.child_frame_id.EndsWith("camera"))
+                    if (tf.child_frame_id.EndsWith("base_link"))
                     {
                         string topic = "/" + tf.child_frame_id.Split('/')[1] + "/image_raw/compressed";
                         tree[tf.child_frame_id].GetComponentInChildren<CompressedImageDisplay>().topic = topic;
@@ -153,7 +153,7 @@ public class TfVisualizer : MonoBehaviour
         AxesHider.update(show_axes);
         LabelCorrector.update(show_labels);
         TransformLineConnector.update(show_lines);
-        if (show_axes && Math.Abs(_axis_scale - axis_scale) > 0.001 && axis_scale > 0.001)
+        if (show_axes && (tfz.Length > 0 || (Math.Abs(_axis_scale - axis_scale) > 0.001 && axis_scale > 0.001)))
         {
             _axis_scale = axis_scale;
             foreach (GameObject go in GameObject.FindGameObjectsWithTag("TFAxis"))

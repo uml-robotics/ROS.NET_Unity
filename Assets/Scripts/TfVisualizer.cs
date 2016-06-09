@@ -130,7 +130,7 @@ public class TfVisualizer : ROSMonoBehavior
                         tree[tf.child_frame_id] = newframe;
                         tree[tf.child_frame_id].gameObject.GetComponentInChildren<TextMesh>(true).text = tf.child_frame_id;
 
-                    if (tf.child_frame_id.EndsWith("camera"))
+                    if (tf.child_frame_id.EndsWith("base_link"))
                     {
                         string topic = "/" + tf.child_frame_id.Split('/')[1] + "/image_raw/compressed";
                         tree[tf.child_frame_id].GetComponentInChildren<CompressedImageDisplay>().topic = topic;

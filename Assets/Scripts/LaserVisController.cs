@@ -12,6 +12,7 @@ public class LaserVisController : MonoBehaviour
     private Subscriber<LaserScan> scansub;
     SortedList<uint, LaserScan> toDraw = new SortedList<uint, LaserScan>();
     List<GameObject> recycle = new List<GameObject>();
+    List<GameObject> active = new List<GameObject>();
     private GameObject points;
 
     public string scan_topic;
@@ -83,14 +84,24 @@ public class LaserVisController : MonoBehaviour
                 
             }
 
-            if (transform.childCount > 1)
+            /*
+            if (countActive() > 0)
             {
                 //transform.GetChild(1).gameObject.SetActive(false);
                 //transform.GetChild(1).gameObject.hideFlags |= HideFlags.HideAndDontSave;
 
                 //recycle.Add(transform.GetChild(1).gameObject);
-                addToRecycle(transform.GetChild(1).gameObject);
+                //addToRecycle(getFromActive(0));
+                getFromActive(0).GetComponent<LaserScanView>().recycle();
             }
+            */
+            
+            while(countActive() > 1)
+            {
+                remFirstFromActive().GetComponent<LaserScanView>().recycle();
+            }
+
+            /*
             for (int i = 0; i < transform.childCount; i++)
             {
                 Transform c = transform.GetChild(i);
@@ -101,6 +112,7 @@ public class LaserVisController : MonoBehaviour
                     Destroy(c.gameObject); //removes the game object permantently from the scene
                 }
             }
+            */
         }
         
 
@@ -128,6 +140,7 @@ public class LaserVisController : MonoBehaviour
                 //newone = ((instantiate a copy of the template))
                 newone.GetComponent<LaserScanView>().Recylce += (oldScan) =>
                 {
+                    remFromActive(oldScan);
                     addToRecycle(oldScan);
                 };
 
@@ -142,6 +155,7 @@ public class LaserVisController : MonoBehaviour
 
             KeyValuePair<uint, LaserScan> oldest = remFirstFromToDraw();
             newone.GetComponent<LaserScanView>().SetScan(Time.fixedTime, oldest.Value);
+            addToActive(newone);
 
         }
 
@@ -242,5 +256,54 @@ public class LaserVisController : MonoBehaviour
 
         return count;
     }
+    #endregion
+
+    #region Active interface
+    void addToActive (GameObject gameObjIn)
+    {
+        lock(active)
+        {
+            active.Add(gameObjIn);
+        }
+    }
+
+    GameObject getFromActive (int index)
+    {
+        GameObject gameObjOut;
+        lock(active)
+        {
+            gameObjOut = active.ElementAt(index);
+        }
+        return gameObjOut;
+    }
+
+    GameObject remFirstFromActive()
+    {
+        GameObject gameObjOut;
+        lock (active)
+        {
+            gameObjOut = active.ElementAt(0);
+            active.RemoveAt(0);
+        }
+        return gameObjOut;
+    }
+
+    void remFromActive(GameObject gameObjToRem)
+    {
+        lock (active)
+        {
+            active.Remove(gameObjToRem);
+        }
+    }
+
+    int countActive()
+    {
+        int count;
+        lock (active)
+            count = active.Count();
+
+        return count;
+    }
+
     #endregion
 }

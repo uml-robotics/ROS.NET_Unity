@@ -23,6 +23,7 @@ public class LaserScanView : MonoBehaviour
     {
         get { return transform.parent == null ? 0f : transform.parent.gameObject.GetComponent<LaserVisController>().Decay_Time; }
     }
+
     private float pointSize
     {
         get { return transform.parent == null ? 1f : transform.parent.gameObject.GetComponent<LaserVisController>().pointSize; }
@@ -34,7 +35,7 @@ public class LaserScanView : MonoBehaviour
     public delegate void IDiedCallback(GameObject me);
     public event IDiedCallback IDied;
 
-    internal void recycle()
+    public void recycle()
     {
         // gameObject.hideFlags |= HideFlags.HideAndDontSave;
         gameObject.SetActive(false);

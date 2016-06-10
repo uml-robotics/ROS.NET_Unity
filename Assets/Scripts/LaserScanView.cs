@@ -10,23 +10,24 @@ public class LaserScanView : MonoBehaviour
     private GameObject[] pointBuffer;
     private bool changed;
 
-    
+    private GameObject goParent;
+    private Transform posParent;
     private uint recycleCount = 0;
     private float lastUpdate;
     float angMin, angInc;
     private uint maxRecycle
     {
-        get { return transform.parent == null ? 100 : transform.parent.gameObject.GetComponent<LaserVisController>().maxRecycle; }
+        get { return goParent == null ? 100 : goParent.gameObject.GetComponent<LaserVisController>().maxRecycle; }
     }
 
     private float decay
     {
-        get { return transform.parent == null ? 0f : transform.parent.gameObject.GetComponent<LaserVisController>().Decay_Time; }
+        get { return goParent == null ? 0f : goParent.gameObject.GetComponent<LaserVisController>().Decay_Time; }
     }
 
     private float pointSize
     {
-        get { return transform.parent == null ? 1f : transform.parent.gameObject.GetComponent<LaserVisController>().pointSize; }
+        get { return goParent == null ? 1f : goParent.gameObject.GetComponent<LaserVisController>().pointSize; }
     }
 
     public delegate void RecycleCallback(GameObject me);
@@ -55,10 +56,12 @@ public class LaserScanView : MonoBehaviour
 
 
 
-    public void SetScan(float time, LaserScan msg)
+    public void SetScan(float time, LaserScan msg, GameObject _goParent, Transform _posParent)
     {
         //compare length of distbuffer and msg.ranges
         //recreate distance array
+        goParent = _goParent;
+        posParent = _posParent;
         recycleCount++;
         gameObject.SetActive(true);
         angMin = msg.angle_min;
@@ -143,8 +146,9 @@ public class LaserScanView : MonoBehaviour
                 for (int i = 0; i < pointBuffer.Length; i++)
                 {
                     pointBuffer[i].transform.localScale = new Vector3(pointSize, pointSize, pointSize);
-                    //TODO: SET THE POSITION for pointBuffer[i] based on distBuffer[i]
-                    pointBuffer[i].transform.localPosition = new Vector3((float)(distBuffer[i] * Math.Cos(angMin + angInc * i)), 1F, (float)(distBuffer[i] * Math.Sin(angMin + angInc * i)));
+                //TODO: SET THE POSITION for pointBuffer[i] based on distBuffer[i]
+                    Vector3 parentPos = posParent.position;
+                    pointBuffer[i].transform.position = new Vector3((float)(distBuffer[i] * Math.Cos(angMin + angInc * i)) + parentPos.x , 1F + parentPos.y, (float)(distBuffer[i] * Math.Sin(angMin + angInc * i)) + parentPos.z);
                 }
                 #endregion
                 changed = false;

@@ -13,15 +13,45 @@ public class LaserVisController : MonoBehaviour
     SortedList<uint, LaserScan> toDraw = new SortedList<uint, LaserScan>();
     List<GameObject> recycle = new List<GameObject>();
     List<GameObject> active = new List<GameObject>();
-    private GameObject points;
+    private GameObject points; //will become child(0), used for cloning
 
     public string scan_topic;
+    public string TransformName;
     public ROSManager ROSManager;
 
     public float pointSize = 1;
     public uint maxRecycle = 100;
+
     public float Decay_Time = 0f;
-    private float old_Decay;
+
+    
+    /*
+    Works but requires tree to be public, was previous private.
+        */
+    private Transform laserTransform 
+    {
+         get
+        {
+            Transform tf;
+            ROSManager.gameObject.GetComponent<TfVisualizer>().tree.TryGetValue(TransformName, out tf);
+            return tf == null ? transform : tf;
+        }
+    }
+    
+
+        /*
+            Should work when TF is active, find will not 'find' inactive game objects
+        */
+        /*
+    private Transform laserViewTf
+    {
+        get
+        {
+            GameObject gameObjOut = GameObject.Find(laser_tf);
+            return gameObjOut == null ? transform : gameObjOut.transform;
+        }
+    }
+    */
     public bool Debug_Messages = false;
 
     // Use this for initialization
@@ -32,35 +62,18 @@ public class LaserVisController : MonoBehaviour
             scansub = nh.subscribe<LaserScan>(scan_topic, 1, scancb);
         });
 
-        //get the TEMPLATE view (our only child 
+
+         //get the TEMPLATE view (our only child 
         points = transform.GetChild(0).gameObject;
         points.hideFlags |= HideFlags.HideAndDontSave;
         points.SetActive(false);
         points.name = "Points";
-
-        old_Decay = Decay_Time;
+       
     }
 
     private void scancb(LaserScan argument)
     {
-        /*
-            Debug.Log("Penis");
-            Debug.Log(argument.ranges[0].ToString());
-            Debug.Log(argument.ranges[1].ToString());
-            Debug.Log(argument.ranges[2].ToString());
-            Debug.Log("angle_max: " + argument.angle_max.ToString());
-            Debug.Log("angle_min: " + argument.angle_min.ToString());
-            Debug.Log("angle_inc: " + argument.angle_increment.ToString());
-            int angles = (int)((Math.Abs(argument.angle_min) + Math.Abs(argument.angle_max)) / argument.angle_increment);
-            Debug.Log("angles: " + angles.ToString());
-            Debug.Log("Ranges_size: " + argument.ranges.Length.ToString());
-            */
-
-        if (countToDraw() > 2 && Debug_Messages)
-        {
-            DebugText.WriteLine("First Element: " + toDraw.ElementAt(0).Key.ToString());
-            DebugText.WriteLine("Last Element: " + toDraw.Last().Key.ToString());
-        }
+   
         //toDraw.Add(argument.header.seq, argument);
         addToDraw(argument);
     }
@@ -68,13 +81,6 @@ public class LaserVisController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
-        if(Decay_Time != old_Decay)
-        {
-            old_Decay = Decay_Time;
-        }
-        
-
         if (Decay_Time < 0.0001f)
         {
            
@@ -127,16 +133,18 @@ public class LaserVisController : MonoBehaviour
             {
                 need_a_new_one = false;
                 newone = remFirstFromRecycle();
-                if (Decay_Time < 0.0001f)
+                /*
+                if (Decay_Time < 0.0001f) //something fucky about this
                     clearRecycle();
+                    */
             }
 
 
             if (need_a_new_one)
             {
                 newone = Instantiate(points.transform).gameObject;
-                newone.transform.SetParent(transform, false);
-                newone.hideFlags |= HideFlags.HideAndDontSave;
+                newone.transform.SetParent(null, false);
+                //newone.hideFlags |= HideFlags.HideAndDontSave;
                 //newone = ((instantiate a copy of the template))
                 newone.GetComponent<LaserScanView>().Recylce += (oldScan) =>
                 {
@@ -154,14 +162,36 @@ public class LaserVisController : MonoBehaviour
             }
 
             KeyValuePair<uint, LaserScan> oldest = remFirstFromToDraw();
-            newone.GetComponent<LaserScanView>().SetScan(Time.fixedTime, oldest.Value);
+            newone.GetComponent<LaserScanView>().SetScan(Time.fixedTime, oldest.Value, gameObject, laserTransform);
             addToActive(newone);
 
         }
 
     }
 
+    //Recursively search for a tf that is a grandchild of rootTf
+    Transform getTf(Transform rootTf, String TfName)
+    {
+        Transform TfOut;
+        TfOut = rootTf.Find(TfName);
 
+        if (TfOut != null)
+        {
+            return TfOut;
+        }
+
+        foreach ( Transform tf in rootTf)
+        {
+            Debug.Log("TFNAME: " + tf.name);
+            TfOut = getTf(tf, TfName);
+            if(TfOut != null)
+            {
+                return TfOut;
+            }
+        }
+        return TfOut;
+    }
+  
     /**
         Recycle and ToDraw interface(s) for adding and removing elements safely
     **/

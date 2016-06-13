@@ -14,17 +14,18 @@ public class LaserScanView : MonoBehaviour
     private Transform posParent;
     private uint recycleCount = 0;
     private float lastUpdate;
-    float angMin, angInc;
-    private uint maxRecycle
+    private float angMin, angInc, maxRange;
+    private uint maxRecycle = 0;
+        /*
     {
         get { return goParent == null ? 100 : goParent.gameObject.GetComponent<LaserVisController>().maxRecycle; }
     }
-
+    */
     private float decay
     {
         get { return goParent == null ? 0f : goParent.gameObject.GetComponent<LaserVisController>().Decay_Time; }
     }
-
+    
     private float pointSize
     {
         get { return goParent == null ? 1f : goParent.gameObject.GetComponent<LaserVisController>().pointSize; }
@@ -66,6 +67,7 @@ public class LaserScanView : MonoBehaviour
         gameObject.SetActive(true);
         angMin = msg.angle_min;
         angInc = msg.angle_increment;
+        maxRange = msg.range_max;
         lastUpdate = time;
         if (distBuffer == null || distBuffer.Length != msg.ranges.Length)
             distBuffer = new float[msg.ranges.Length];
@@ -144,14 +146,25 @@ public class LaserScanView : MonoBehaviour
 
                 #region FOR ALL SPHERES ALL THE TIME
                 for (int i = 0; i < pointBuffer.Length; i++)
-                {
+                {   
+                    if (distBuffer[i] > (maxRange - 1f) + 0.999f || distBuffer[i] < 0.0001f)
+                    {
+                        pointBuffer[i].SetActive(false);
+                        continue;
+                    }
+
+                pointBuffer[i].SetActive(true);
+
                     pointBuffer[i].transform.localScale = new Vector3(pointSize, pointSize, pointSize);
                 //TODO: SET THE POSITION for pointBuffer[i] based on distBuffer[i]
                     Vector3 parentPos = posParent.position;
-                    pointBuffer[i].transform.position = new Vector3((float)(distBuffer[i] * Math.Cos(angMin + angInc * i)) + parentPos.x , 1F + parentPos.y, (float)(distBuffer[i] * Math.Sin(angMin + angInc * i)) + parentPos.z);
+                    pointBuffer[i].transform.position = new Vector3((float)(distBuffer[i] * Math.Sin(angMin + angInc * i)) + parentPos.x , 1F + parentPos.y, (float)(distBuffer[i] * Math.Cos(angMin + angInc * i)) + parentPos.z);
                 }
-                #endregion
-                changed = false;
+                Quaternion parentRot = posParent.rotation;
+
+                this.transform.rotation = parentRot;
+            #endregion
+            changed = false;
             }
         
     }

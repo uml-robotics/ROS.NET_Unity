@@ -35,7 +35,7 @@ public class TfVisualizer : MonoBehaviour
     public float axis_scale = 1.0f;
     private float _axis_scale = 1.0f;
 
-    public Dictionary<string, Transform> tree = new Dictionary<string, Transform>();
+    private Dictionary<string, Transform> tree = new Dictionary<string, Transform>();
 
     public static void hideChildrenInHierarchy(Transform trans)
     {
@@ -164,4 +164,10 @@ public class TfVisualizer : MonoBehaviour
             }
         }
     }
+
+    public void queryTransforms(string tfName, out Transform val)
+    {
+        tree.TryGetValue(tfName, out val);
+    }
+
 }

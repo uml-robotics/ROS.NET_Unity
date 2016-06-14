@@ -8,7 +8,7 @@ using System.Linq;
 
 public class LaserVisController : SensorTFInterface
 {
-    SortedList<uint, LaserScan> toDraw = new SortedList<uint, LaserScan>();
+    SortedList<DateTime, LaserScan> toDraw = new SortedList<DateTime, LaserScan>();
     List<GameObject> recycle = new List<GameObject>();
     List<GameObject> active = new List<GameObject>();
 
@@ -52,7 +52,8 @@ public class LaserVisController : SensorTFInterface
         {
             TFName = argument.header.frame_id;
         }
-        addToDraw(argument);
+        lock(toDraw)
+            addToDraw(argument);
     }
 
     // Update is called once per frame
@@ -60,62 +61,71 @@ public class LaserVisController : SensorTFInterface
     {
         if (Decay_Time < 0.0001f)
         {
-           
-            while (countToDraw() > 1)
-            {
-                remFirstFromToDraw();
-            }
-     
-            while(countActive() > 1)
-            {
-                remFirstFromActive().GetComponent<LaserScanView>().recycle();
-            }          
+
+            lock (toDraw)
+                while (countToDraw() > 1)
+                {
+                    remFirstFromToDraw();
+                }
+            lock(active)
+                while(countActive() > 1)
+                {
+                    remFirstFromActive().GetComponent<LaserScanView>().recycle();
+                }          
         }
 
-        while (countToDraw() > 0)
+        lock(toDraw)
         {
-            GameObject newone = null;
-            bool need_a_new_one = true;
- 
-            if (countRecycle() > 0)
+            //kill ones that should already be expired
+            while (toDraw.Count > 0 && toDraw.ElementAt(0).Key < ROS.GetTime(ROS.GetTime()).Subtract(TimeSpan.FromSeconds(Decay_Time)))
+                remFirstFromToDraw();
+            //draw ones that aren't
+            while (countToDraw() > 0)
             {
-                need_a_new_one = false;
-                newone = remFirstFromRecycle();
-                /*
-                if (Decay_Time < 0.0001f) //something fucky about this
-                    clearRecycle();
-                    */
-            }
+                GameObject newone = null;
+                bool need_a_new_one = true;
+
+                lock (recycle)
+                    if (recycle.Count() > 0)
+                    {
+                        need_a_new_one = false;
+                        newone = remFirstFromRecycle();
+                        /*
+                        if (Decay_Time < 0.0001f) //something fucky about this
+                            clearRecycle();
+                            */
+                    }
 
 
-            if (need_a_new_one)
-            {
-                newone = Instantiate(points.transform).gameObject;
-                newone.transform.SetParent(null, false);
-
-                //newone.hideFlags |= HideFlags.HideAndDontSave;
-
-                newone.GetComponent<LaserScanView>().Recylce += (oldScan) =>
+                if (need_a_new_one)
                 {
-                    remFromActive(oldScan);
-                    addToRecycle(oldScan);
-                };
+                    newone = Instantiate(points.transform).gameObject;
+                    newone.transform.SetParent(null, false);
 
-                newone.GetComponent<LaserScanView>().IDied += (deadScan) =>
-                {
-                    
-                    remFromRecycle(deadScan);
-                    deadScan.transform.SetParent(null); //disconnect from parent
-                    Destroy(deadScan); //destroy object
-                };
+                    //newone.hideFlags |= HideFlags.HideAndDontSave;
+
+                    newone.GetComponent<LaserScanView>().Recylce += (oldScan) =>
+                    {
+                        remFromActive(oldScan);
+                        addToRecycle(oldScan);
+                    };
+
+                    newone.GetComponent<LaserScanView>().IDied += (deadScan) =>
+                    {
+
+                        remFromRecycle(deadScan);
+                        deadScan.transform.SetParent(null); //disconnect from parent
+                        Destroy(deadScan); //destroy object
+                    };
+                }
+
+                KeyValuePair<DateTime, LaserScan> oldest = remFirstFromToDraw();
+                newone.GetComponent<LaserScanView>().SetScan(Time.fixedTime, oldest.Value, gameObject, TF);
+
+                active.Add(newone);
+
             }
-
-            KeyValuePair<uint, LaserScan> oldest = remFirstFromToDraw();
-            newone.GetComponent<LaserScanView>().SetScan(Time.fixedTime, oldest.Value, gameObject, TF);
-            addToActive(newone);
-
         }
-
     }
 
     /**
@@ -125,24 +135,20 @@ public class LaserVisController : SensorTFInterface
     #region ToDraw interface
     void addToDraw(LaserScan scanIn)
     {
-
-        lock (toDraw)
-        {
-            toDraw.Add(scanIn.header.seq, scanIn);
-        }
+        toDraw.Add(ROS.GetTime(scanIn.header.stamp), scanIn);
     }
 
-    KeyValuePair<uint, LaserScan> remFirstFromToDraw()
+    KeyValuePair<DateTime, LaserScan> remFirstFromToDraw()
     {
-        KeyValuePair<uint, LaserScan> scanSeqPairOut;
-        KeyValuePair<uint, LaserScan> something = default(KeyValuePair<uint, LaserScan>);
-        lock (toDraw)
+        KeyValuePair<DateTime, LaserScan> scanSeqPairOut;
+        KeyValuePair<DateTime, LaserScan> something = default(KeyValuePair<DateTime, LaserScan>);
+        scanSeqPairOut = toDraw.FirstOrDefault();
+        toDraw.Remove(scanSeqPairOut.Key);
+        return scanSeqPairOut;
+
+        if (!scanSeqPairOut.Equals(something))
         {
-            scanSeqPairOut = toDraw.FirstOrDefault();
-            if (!scanSeqPairOut.Equals(something))
-            {
-                toDraw.Remove(scanSeqPairOut.Key);
-            }
+            toDraw.Remove(scanSeqPairOut.Key);
         }
         return scanSeqPairOut;
     }
@@ -150,11 +156,7 @@ public class LaserVisController : SensorTFInterface
     int countToDraw()
     {
         int count;
-
-        lock (toDraw)
-        {
-            count = toDraw.Count;
-        }
+        count = toDraw.Count;
 
         return count;
     }
@@ -173,74 +175,34 @@ public class LaserVisController : SensorTFInterface
     GameObject remFirstFromRecycle()
     {
         GameObject gameObjOut;
-        lock (recycle)
-        {
-            //recycle.Add(gameObjIn);
-            gameObjOut = recycle.FirstOrDefault().gameObject;
-            if (!gameObjOut.Equals(default(GameObject)))
-            {
-                recycle.RemoveAt(0);
-            }
-        }
+        //recycle.Add(gameObjIn);
+        gameObjOut = recycle.FirstOrDefault().gameObject;
+        /*if (!gameObjOut.Equals(default(GameObject)))
+        {*/
+            recycle.RemoveAt(0);
+        //}
         return gameObjOut;
     }
 
     void remFromRecycle(GameObject gameObjOut)
     {
-        lock (recycle)
-        {
-            recycle.Remove(gameObject);
-        }
-
-    }
-
-    void clearRecycle()
-    {
-        lock(recycle)
-            recycle.Clear();
-
-    }
-
-    int countRecycle()
-    {
-        int count;
-
-        lock (recycle)
-        {
-            count = recycle.Count;
-        }
-
-        return count;
+         recycle.Remove(gameObject);
     }
     #endregion
 
     #region Active interface
-    void addToActive (GameObject gameObjIn)
-    {
-        lock(active)
-        {
-            active.Add(gameObjIn);
-        }
-    }
-
     GameObject getFromActive (int index)
     {
         GameObject gameObjOut;
-        lock(active)
-        {
             gameObjOut = active.ElementAt(index);
-        }
         return gameObjOut;
     }
 
     GameObject remFirstFromActive()
     {
         GameObject gameObjOut;
-        lock (active)
-        {
             gameObjOut = active.ElementAt(0);
             active.RemoveAt(0);
-        }
         return gameObjOut;
     }
 
@@ -255,8 +217,7 @@ public class LaserVisController : SensorTFInterface
     int countActive()
     {
         int count;
-        lock (active)
-            count = active.Count();
+        count = active.Count();
 
         return count;
     }

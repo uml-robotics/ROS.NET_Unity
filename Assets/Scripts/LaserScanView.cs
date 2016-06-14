@@ -72,7 +72,9 @@ public class LaserScanView : MonoBehaviour
         lastUpdate = time;
         if (distBuffer == null || distBuffer.Length != msg.ranges.Length)
             distBuffer = new float[msg.ranges.Length];
-        Array.Copy(msg.ranges, distBuffer, distBuffer.Length);
+        for(int i=0;i<msg.ranges.Length;i++)
+            distBuffer[i] = 1.0f;
+        //Array.Copy(msg.ranges, distBuffer, distBuffer.Length);
         changed = true;
     }
 
@@ -147,24 +149,26 @@ public class LaserScanView : MonoBehaviour
 
                 #region FOR ALL SPHERES ALL THE TIME
                 for (int i = 0; i < pointBuffer.Length; i++)
-                {   
-                    if (distBuffer[i] > (maxRange - 0.0001f) || distBuffer[i] < (minRange + 0.0001f))
+            {
+                pointBuffer[i].SetActive(false);
+                if (distBuffer[i] > (maxRange - 0.0001f) || distBuffer[i] < (minRange + 0.0001f))
                     {
-                        pointBuffer[i].SetActive(false);
                         continue;
                     }
-
-                pointBuffer[i].SetActive(true);
-
                     pointBuffer[i].transform.localScale = new Vector3(pointSize, pointSize, pointSize);
                 //TODO: SET THE POSITION for pointBuffer[i] based on distBuffer[i]
                     Vector3 parentPos = posParent.position;
-                    pointBuffer[i].transform.position = new Vector3((float)(distBuffer[i] * Math.Sin(angMin + angInc * i)) + parentPos.x , 1F + parentPos.y, (float)(distBuffer[i] * Math.Cos(angMin + angInc * i)) + parentPos.z);
-                }
+                    pointBuffer[i].transform.localPosition = new Vector3((float)(distBuffer[i] * Math.Sin(angMin + angInc * i)) , 0F, (float)(distBuffer[i] * Math.Cos(angMin + angInc * i)));
+                pointBuffer[i].SetActive(true);
+            }
 
                 Vector3 rot = new Vector3(posParent.rotation.eulerAngles.x, posParent.rotation.eulerAngles.y, posParent.rotation.eulerAngles.z);
-                this.transform.rotation = Quaternion.Slerp(transform.rotation, posParent.parent.rotation, 1f); 
-           
+            // this.transform.rotation = Quaternion.Slerp(transform.rotation, posParent.parent.rotation, 1f); 
+            gameObject.SetActive(false);
+            transform.position = posParent.position;
+            transform.rotation = posParent.rotation;
+            gameObject.SetActive(true);
+
             #endregion
             changed = false;
             }

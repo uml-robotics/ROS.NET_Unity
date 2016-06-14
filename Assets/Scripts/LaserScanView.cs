@@ -14,7 +14,7 @@ public class LaserScanView : MonoBehaviour
     private Transform posParent;
     private uint recycleCount = 0;
     private float lastUpdate;
-    private float angMin, angInc, maxRange;
+    private float angMin, angInc, maxRange, minRange;
     private uint maxRecycle = 0;
         /*
     {
@@ -68,6 +68,7 @@ public class LaserScanView : MonoBehaviour
         angMin = msg.angle_min;
         angInc = msg.angle_increment;
         maxRange = msg.range_max;
+        minRange = msg.range_min;
         lastUpdate = time;
         if (distBuffer == null || distBuffer.Length != msg.ranges.Length)
             distBuffer = new float[msg.ranges.Length];
@@ -147,7 +148,7 @@ public class LaserScanView : MonoBehaviour
                 #region FOR ALL SPHERES ALL THE TIME
                 for (int i = 0; i < pointBuffer.Length; i++)
                 {   
-                    if (distBuffer[i] > (maxRange - 1f) + 0.999f || distBuffer[i] < 0.0001f)
+                    if (distBuffer[i] > (maxRange - 0.0001f) || distBuffer[i] < (minRange + 0.0001f))
                     {
                         pointBuffer[i].SetActive(false);
                         continue;
@@ -160,9 +161,10 @@ public class LaserScanView : MonoBehaviour
                     Vector3 parentPos = posParent.position;
                     pointBuffer[i].transform.position = new Vector3((float)(distBuffer[i] * Math.Sin(angMin + angInc * i)) + parentPos.x , 1F + parentPos.y, (float)(distBuffer[i] * Math.Cos(angMin + angInc * i)) + parentPos.z);
                 }
-                Quaternion parentRot = posParent.rotation;
 
-                this.transform.rotation = parentRot;
+                Vector3 rot = new Vector3(posParent.rotation.eulerAngles.x, posParent.rotation.eulerAngles.y, posParent.rotation.eulerAngles.z);
+                this.transform.rotation = Quaternion.Slerp(transform.rotation, posParent.parent.rotation, 1f); 
+           
             #endregion
             changed = false;
             }

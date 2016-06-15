@@ -34,7 +34,7 @@ public class MapDisplay : ROSMonoBehavior
 	// Use this for initialization
     private void Start()
     {
-        rosmanager.StartROS(() => {
+        rosmanager.StartROS(this,() => {
             nh = new NodeHandle();
             mapsub = nh.subscribe<OccupancyGrid>(map_topic, 1, mapcb);
             metadatasub = nh.subscribe<MapMetaData>(map_metadata_topic, 1, metadatacb);

@@ -45,7 +45,9 @@ public class TfVisualizer : ROSMonoBehavior
     // Use this for initialization
     void Start ()
     {
-        Template = GameObject.FindGameObjectsWithTag("TFAxis")[0].transform.parent;
+        if (transform.childCount == 0)
+            throw new Exception("Unable to locate the template TFFrame for the TFTree");
+        Template = transform.GetChild(0);
         Root = (Transform)Instantiate(Template);
         Root.SetParent(transform);
         Template.gameObject.SetActive(false);
@@ -58,7 +60,7 @@ public class TfVisualizer : ROSMonoBehavior
         tree[FixedFrame] = Root;
         hideChildrenInHierarchy(Root);
 
-	    rosmanager.StartROS(() =>
+	    rosmanager.StartROS(this, () =>
 	                                                       {
 	                                                           nh = new NodeHandle();
 	                                                           tfstaticsub = nh.subscribe<Messages.tf.tfMessage>("/tf_static", 0, tf_callback);

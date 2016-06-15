@@ -12,38 +12,22 @@ using UnityEditor;
 #endif
 using XmlRpc_Wrapper;
 
+[InitializeOnLoad]
 public class ROSMonoBehavior : MonoBehaviour
 {
-    protected ROSManager rosmanager
+    protected static readonly ROSManager rosmanager;
+    static ROSMonoBehavior()
     {
-        get
-        {
-            lock(mgrlock)
-            {
-                if (_rosmanager == null)
-                    _rosmanager = transform.root.GetComponentInChildren<ROSManager>(true);
-            }
-            return _rosmanager;
-        }
+        rosmanager = new ROSManager();
     }
-    private static ROSManager _rosmanager;
-    private static object mgrlock = new object();
-    
 }
 
 /// <summary>
 /// Forces ones call to ROS.Init by multiple ROS things in the process
 /// ONLY starts ROS.NET outside of the editor OR if the editor is playing the scene
 /// </summary>
-public class ROSManager : MonoBehaviour
+public class ROSManager
 {
-    private MasterChooserController MasterChooser;
-
-    protected void Start()
-    {
-        MasterChooser = transform.root.GetComponentInChildren<MasterChooserController>(true);
-    }
-
     private static object loggerlock = new object();
     private static StreamWriter logwriter = null;
 
@@ -51,7 +35,7 @@ public class ROSManager : MonoBehaviour
     /// Call ROS.Init if it hasn't been called, and informs callers whether to try to make a nodehandle and pubs/subs
     /// </summary>
     /// <returns>Whether ros.net initialization can continue</returns>
-    public void StartROS(Action whensuccessful)
+    public void StartROS(MonoBehaviour caller, Action whensuccessful)
     {
         Action whatToDo = () => {
 #if UNITY_EDITOR
@@ -69,7 +53,7 @@ public class ROSManager : MonoBehaviour
             }
 #endif
         };
-
+        MasterChooserController MasterChooser = caller.transform.root.GetComponentInChildren<MasterChooserController>(true);
         if (MasterChooser == null || !MasterChooser.checkNeeded())
         {
             whatToDo();

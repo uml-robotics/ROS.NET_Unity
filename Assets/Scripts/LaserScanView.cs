@@ -72,9 +72,9 @@ public class LaserScanView : MonoBehaviour
         lastUpdate = time;
         if (distBuffer == null || distBuffer.Length != msg.ranges.Length)
             distBuffer = new float[msg.ranges.Length];
-        for(int i=0;i<msg.ranges.Length;i++)
-            distBuffer[i] = 1.0f;
-        //Array.Copy(msg.ranges, distBuffer, distBuffer.Length);
+        //for(int i=0;i<msg.ranges.Length;i++)
+        //    distBuffer[i] = 1.0f;
+        Array.Copy(msg.ranges, distBuffer, distBuffer.Length);
         changed = true;
     }
 

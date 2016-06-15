@@ -77,8 +77,8 @@ public class LaserVisController : SensorTFInterface
         lock(toDraw)
         {
             //kill ones that should already be expired
-            while (toDraw.Count > 0 && toDraw.ElementAt(0).Key < ROS.GetTime(ROS.GetTime()).Subtract(TimeSpan.FromSeconds(Decay_Time)))
-                remFirstFromToDraw();
+            //while (toDraw.Count > 0 && toDraw.ElementAt(0).Key < ROS.GetTime(ROS.GetTime()).Subtract(TimeSpan.FromSeconds(Decay_Time)))
+             //   remFirstFromToDraw();
             //draw ones that aren't
             while (countToDraw() > 0)
             {

@@ -2,6 +2,7 @@
 using System.Collections;
 using Messages.sensor_msgs;
 using System;
+using tf.net;
 
 public class LaserScanView : MonoBehaviour
 {
@@ -158,12 +159,12 @@ public class LaserScanView : MonoBehaviour
                     pointBuffer[i].transform.localScale = new Vector3(pointSize, pointSize, pointSize);
                 //TODO: SET THE POSITION for pointBuffer[i] based on distBuffer[i]
                     Vector3 parentPos = posParent.position;
-                    pointBuffer[i].transform.localPosition = new Vector3((float)(distBuffer[i] * Math.Sin(angMin + angInc * i)) , 0F, (float)(distBuffer[i] * Math.Cos(angMin + angInc * i)));
+                emQuaternion rot = new emQuaternion(0, 0, 0, 1);
+                emVector3 pos = new emVector3((float)(distBuffer[i] * Math.Cos(angMin + angInc * i)), (float)(distBuffer[i] * Math.Sin(angMin + angInc * i)), 0f);
+                pointBuffer[i].transform.localPosition = pos.UnityPosition;
+                pointBuffer[i].transform.localRotation = rot.UnityRotation;
                 pointBuffer[i].SetActive(true);
             }
-
-                Vector3 rot = new Vector3(posParent.rotation.eulerAngles.x, posParent.rotation.eulerAngles.y, posParent.rotation.eulerAngles.z);
-            // this.transform.rotation = Quaternion.Slerp(transform.rotation, posParent.parent.rotation, 1f); 
             gameObject.SetActive(false);
             transform.position = posParent.position;
             transform.rotation = posParent.rotation;

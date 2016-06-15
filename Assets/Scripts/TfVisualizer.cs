@@ -116,6 +116,8 @@ public class TfVisualizer : ROSMonoBehavior
                     Transform value1;
                     if (tree.TryGetValue(tf.frame_id, out value1))
                         Template.SetParent(value1);
+                    else
+                        Debug.LogWarning(string.Format("The parent ({0}) of {1} is not in the tree yet!",tf.frame_id,tf.child_frame_id));
 
                     Transform newframe = (Transform)Instantiate(Template, Template.localPosition, Template.localRotation);
                     hideChildrenInHierarchy(newframe);
@@ -131,6 +133,8 @@ public class TfVisualizer : ROSMonoBehavior
                 {
                     tree[tf.child_frame_id].SetParent(value, false);
                     tree[tf.child_frame_id].gameObject.SetActive(true);
+                    if (!value.gameObject.activeInHierarchy)
+                        value.gameObject.SetActive(true);
                 }
                 else
                     tree[tf.child_frame_id].gameObject.SetActive(false);

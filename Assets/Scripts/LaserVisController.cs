@@ -12,11 +12,11 @@ public class LaserVisController : SensorTFInterface
     List<GameObject> recycle = new List<GameObject>();
     List<GameObject> active = new List<GameObject>();
 
+    Messages.std_msgs.Time lastStamp = null;
 
     private GameObject points; //will become child(0), used for cloning
     private NodeHandle nh = null;
     private Subscriber<LaserScan> subscriber;
-
 
     public float pointSize = 1;
     //curently not in use
@@ -29,8 +29,7 @@ public class LaserVisController : SensorTFInterface
     // Use this for initialization
     void Start()
     {
-
-        ROSManager.GetComponent<ROSManager>().StartROS(() => {
+        rosmanager.StartROS(this,() => {
             nh = new NodeHandle();
             subscriber = nh.subscribe<LaserScan>(topic, 1, scancb);
         });
@@ -52,8 +51,16 @@ public class LaserVisController : SensorTFInterface
         {
             TFName = argument.header.frame_id;
         }
-        lock(toDraw)
-            addToDraw(argument);
+
+        if(lastStamp != null && ROS.GetTime(argument.header.stamp) < ROS.GetTime(lastStamp)) 
+        {
+            UnityEngine.Debug.LogError("TIME IS MOVING BACKWARDS");
+        }
+        lastStamp = argument.header.stamp;
+
+        lock (toDraw)
+            toDraw.Add(ROS.GetTime(argument.header.stamp), argument);
+
     }
 
     // Update is called once per frame
@@ -63,14 +70,16 @@ public class LaserVisController : SensorTFInterface
         {
 
             lock (toDraw)
-                while (countToDraw() > 1)
+                while (toDraw.Count() > 1)
                 {
                     remFirstFromToDraw();
                 }
             lock(active)
                 while(countActive() > 1)
                 {
+                    //active.Last
                     remFirstFromActive().GetComponent<LaserScanView>().recycle();
+                    //active.Last().GetComponent<LaserScanView>().recycle();
                 }          
         }
 
@@ -80,7 +89,7 @@ public class LaserVisController : SensorTFInterface
             //while (toDraw.Count > 0 && toDraw.ElementAt(0).Key < ROS.GetTime(ROS.GetTime()).Subtract(TimeSpan.FromSeconds(Decay_Time)))
              //   remFirstFromToDraw();
             //draw ones that aren't
-            while (countToDraw() > 0)
+            while (toDraw.Count() > 0)
             {
                 GameObject newone = null;
                 bool need_a_new_one = true;
@@ -119,8 +128,8 @@ public class LaserVisController : SensorTFInterface
                     };
                 }
 
-                KeyValuePair<DateTime, LaserScan> oldest = remFirstFromToDraw();
-                newone.GetComponent<LaserScanView>().SetScan(Time.fixedTime, oldest.Value, gameObject, TF);
+                KeyValuePair<DateTime, LaserScan>? oldest = remFirstFromToDraw();
+                newone.GetComponent<LaserScanView>().SetScan(Time.fixedTime, oldest.Value.Value, gameObject, TF);
 
                 active.Add(newone);
 
@@ -138,27 +147,21 @@ public class LaserVisController : SensorTFInterface
         toDraw.Add(ROS.GetTime(scanIn.header.stamp), scanIn);
     }
 
-    KeyValuePair<DateTime, LaserScan> remFirstFromToDraw()
+    KeyValuePair<DateTime, LaserScan>? remFirstFromToDraw()
     {
-        KeyValuePair<DateTime, LaserScan> scanSeqPairOut;
-        KeyValuePair<DateTime, LaserScan> something = default(KeyValuePair<DateTime, LaserScan>);
-        scanSeqPairOut = toDraw.FirstOrDefault();
-        toDraw.Remove(scanSeqPairOut.Key);
-        return scanSeqPairOut;
-
-        if (!scanSeqPairOut.Equals(something))
+        if (toDraw.Count == 0) return null;
+        var min = toDraw.Keys.Min();
+        var kvp = new KeyValuePair<DateTime, LaserScan>(min, toDraw[min]);
+        toDraw.Remove(min);
+        return new Nullable<KeyValuePair<DateTime, LaserScan>>(kvp);
+        //KeyValuePair<DateTime, LaserScan> scanSeqPairOut = toDraw.FirstOrDefault();
+       // toDraw.Remove(scanSeqPairOut.Key);
+      //  return scanSeqPairOut;
+        /*if (!scanSeqPairOut.Equals(default(KeyValuePair<DateTime, LaserScan>)))
         {
             toDraw.Remove(scanSeqPairOut.Key);
         }
-        return scanSeqPairOut;
-    }
-
-    int countToDraw()
-    {
-        int count;
-        count = toDraw.Count;
-
-        return count;
+        return scanSeqPairOut;*/
     }
 
     #endregion

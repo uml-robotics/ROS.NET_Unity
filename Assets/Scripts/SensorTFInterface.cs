@@ -7,11 +7,26 @@ using System.Collections.Generic;
 using System.Linq;
 
 
-public class SensorTFInterface : MonoBehaviour
+public class SensorTFInterface : ROSMonoBehavior
 {
-    public String topic;
-    public ROSManager ROSManager;
+    private static TfVisualizer _tfvisualizer;
+    private static object vislock = new object();
+    public TfVisualizer tfvisualizer
+    {
+        get
+        {
+            lock(vislock)
+            {
+                if (_tfvisualizer == null)
+                {
+                    _tfvisualizer = transform.root.GetComponentInChildren<TfVisualizer>();
+                }
+            }
+            return _tfvisualizer;
+        }
+    }
 
+    public String topic;
     internal String TFName;
     internal Transform TF {
         get
@@ -22,9 +37,9 @@ public class SensorTFInterface : MonoBehaviour
             {
                 strTemp = "/" + strTemp;
             }
-            ROSManager.gameObject.GetComponent<TfVisualizer>().queryTransforms(strTemp, out tfTemp);
-            return tfTemp == null ? transform : tfTemp;
-
+            if (tfvisualizer.queryTransforms(strTemp, out tfTemp))
+                return tfTemp;
+            return transform;
         } }
 
 

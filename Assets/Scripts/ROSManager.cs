@@ -12,13 +12,37 @@ using UnityEditor;
 #endif
 using XmlRpc_Wrapper;
 
+public class ROSMonoBehavior : MonoBehaviour
+{
+    protected ROSManager rosmanager
+    {
+        get
+        {
+            lock(mgrlock)
+            {
+                if (_rosmanager == null)
+                    _rosmanager = transform.root.GetComponentInChildren<ROSManager>(true);
+            }
+            return _rosmanager;
+        }
+    }
+    private static ROSManager _rosmanager;
+    private static object mgrlock = new object();
+    
+}
+
 /// <summary>
 /// Forces ones call to ROS.Init by multiple ROS things in the process
 /// ONLY starts ROS.NET outside of the editor OR if the editor is playing the scene
 /// </summary>
 public class ROSManager : MonoBehaviour
 {
-    public Component MasterChooser;
+    private MasterChooserController MasterChooser;
+
+    protected void Start()
+    {
+        MasterChooser = transform.root.GetComponentInChildren<MasterChooserController>(true);
+    }
 
     private static object loggerlock = new object();
     private static StreamWriter logwriter = null;
@@ -29,8 +53,6 @@ public class ROSManager : MonoBehaviour
     /// <returns>Whether ros.net initialization can continue</returns>
     public void StartROS(Action whensuccessful)
     {
-        MasterChooserController mcc = MasterChooser.GetComponent<MasterChooserController>();
-        
         Action whatToDo = () => {
 #if UNITY_EDITOR
             if (EditorApplication.isPlaying)
@@ -48,11 +70,11 @@ public class ROSManager : MonoBehaviour
 #endif
         };
 
-        if (mcc == null || !mcc.checkNeeded())
+        if (MasterChooser == null || !MasterChooser.checkNeeded())
         {
             whatToDo();
         }
-        else if (!mcc.ShowIfNeeded(whatToDo))
+        else if (!MasterChooser.ShowIfNeeded(whatToDo))
         {
             Debug.LogError("Failed to test for applicability, show, or handle masterchooser input");
         }

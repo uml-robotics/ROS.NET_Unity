@@ -10,7 +10,7 @@ using UnityEditor;
 #endif
 using System.Collections;
 
-public class MapDisplay : MonoBehaviour
+public class MapDisplay : ROSMonoBehavior
 {
     public string map_topic;
     public string map_metadata_topic;
@@ -31,12 +31,10 @@ public class MapDisplay : MonoBehaviour
 
     private AutoResetEvent textureMutex = new AutoResetEvent(false);
 
-    public ROSManager ROSManager;
-
 	// Use this for initialization
     private void Start()
     {
-        ROSManager.GetComponent<ROSManager>().StartROS(() => {
+        rosmanager.StartROS(() => {
             nh = new NodeHandle();
             mapsub = nh.subscribe<OccupancyGrid>(map_topic, 1, mapcb);
             metadatasub = nh.subscribe<MapMetaData>(map_metadata_topic, 1, metadatacb);

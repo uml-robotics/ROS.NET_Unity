@@ -13,7 +13,7 @@ using System.Collections;
 using Ros_CSharp;
 using System.Linq;
 
-public class TfVisualizer : MonoBehaviour
+public class TfVisualizer : ROSMonoBehavior
 {
     private NodeHandle nh = null;
     private Subscriber<Messages.tf.tfMessage> tfsub, tfstaticsub;
@@ -24,11 +24,10 @@ public class TfVisualizer : MonoBehaviour
     private volatile int count = 0;
     private DateTime last = DateTime.Now;
 
-    public Transform Template;
-    public Transform Root;
+    private Transform Template;
+    private Transform Root;
 
     public string FixedFrame;
-    public ROSManager ROSManager;
     public bool show_labels;
     public bool show_lines;
     public bool show_axes;
@@ -46,20 +45,20 @@ public class TfVisualizer : MonoBehaviour
     // Use this for initialization
     void Start ()
     {
-        if (Template != null)
-        {
-            Template.gameObject.SetActive(false);
-            hideChildrenInHierarchy(Template);
-            Template.hideFlags |= HideFlags.HideAndDontSave;
-        }
+        Template = GameObject.FindGameObjectsWithTag("TFAxis")[0].transform.parent;
+        Root = (Transform)Instantiate(Template);
+        Root.SetParent(transform);
+        Template.gameObject.SetActive(false);
+        hideChildrenInHierarchy(Template);
+        Template.hideFlags |= HideFlags.HideAndDontSave;
 #if UNITY_EDITOR
         ObjectNames.SetNameSmart(Root, FixedFrame);
 #endif
-	    Root.GetComponentInChildren<TextMesh>().text = FixedFrame;
+	    Root.GetComponentInChildren<TextMesh>(true).text = FixedFrame;
         tree[FixedFrame] = Root;
         hideChildrenInHierarchy(Root);
 
-	    ROSManager.GetComponent<ROSManager>().StartROS(() =>
+	    rosmanager.StartROS(() =>
 	                                                       {
 	                                                           nh = new NodeHandle();
 	                                                           tfstaticsub = nh.subscribe<Messages.tf.tfMessage>("/tf_static", 0, tf_callback);
@@ -115,8 +114,6 @@ public class TfVisualizer : MonoBehaviour
                     Transform value1;
                     if (tree.TryGetValue(tf.frame_id, out value1))
                         Template.SetParent(value1);
-                    else
-                        Template.SetParent(Root.transform);
 
                     Transform newframe = (Transform)Instantiate(Template, Template.localPosition, Template.localRotation);
                     hideChildrenInHierarchy(newframe);
@@ -124,7 +121,7 @@ public class TfVisualizer : MonoBehaviour
                     ObjectNames.SetNameSmart(newframe, tf.child_frame_id);
 #endif
                     tree[tf.child_frame_id] = newframe;
-                    tree[tf.child_frame_id].gameObject.GetComponentInChildren<TextMesh>().text = tf.child_frame_id;
+                    tree[tf.child_frame_id].gameObject.GetComponentInChildren<TextMesh>(true).text = tf.child_frame_id;
                 }
 
                 Transform value;
@@ -165,9 +162,9 @@ public class TfVisualizer : MonoBehaviour
         }
     }
 
-    public void queryTransforms(string tfName, out Transform val)
+    public bool queryTransforms(string tfName, out Transform val)
     {
-        tree.TryGetValue(tfName, out val);
+        return tree.TryGetValue(tfName, out val);
     }
 
 }

@@ -9,8 +9,18 @@ using UnityEngine.EventSystems;
 public class MasterChooserController : MonoBehaviour
 {
     private List<Action> whendone = new List<Action>();
-    public Component master_uri_text;
-    public Component hostname_text;
+    private Component master_uri_text;
+    private Component hostname_text;
+
+    void Start()
+    {
+        UnityEngine.UI.Text[] texts = GetComponentsInChildren<UnityEngine.UI.Text>();
+        if (texts.Length == 2)
+        {
+            master_uri_text = texts[0];
+            hostname_text = texts[1];
+        }
+    }
 
     public bool checkNeeded()
     {

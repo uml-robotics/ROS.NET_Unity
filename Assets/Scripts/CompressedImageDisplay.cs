@@ -11,7 +11,7 @@ using UnityEditor;
 #endif
 using System.Collections;
 
-public class CompressedImageDisplay : MonoBehaviour
+public class CompressedImageDisplay : ROSMonoBehavior
 {
     private string _topic;
     public string topic { get { return _topic; }
@@ -26,7 +26,6 @@ public class CompressedImageDisplay : MonoBehaviour
                 mapsub = nh.subscribe<CompressedImage>(topic, 1, mapcb);
             } } }
     public string image_topic;
-    public Component ROSManager;
 
     private NodeHandle nh = null;
     private Subscriber<CompressedImage> mapsub;
@@ -44,7 +43,7 @@ public class CompressedImageDisplay : MonoBehaviour
     private void Start()
     {
         rend = GetComponent<MeshRenderer>();
-        ROSManager.GetComponent<ROSManager>().StartROS(() =>
+        rosmanager.StartROS(() =>
                                                            {
                                                                nh = new NodeHandle();
                                                                if (image_topic != null && image_topic.Length > 0)

@@ -43,7 +43,7 @@ public class CompressedImageDisplay : ROSMonoBehavior
     private void Start()
     {
         rend = GetComponent<MeshRenderer>();
-        rosmanager.StartROS(() =>
+        rosmanager.StartROS(this, () =>
                                                            {
                                                                nh = new NodeHandle();
                                                                if (image_topic != null && image_topic.Length > 0)

@@ -12,12 +12,13 @@ public class LaserScanView : MonoBehaviour
     private bool changed;
 
     private GameObject goParent;
-    private Transform posParent;
+    private Transform TF;
     private uint recycleCount = 0;
     private float lastUpdate;
     private float angMin, angInc, maxRange, minRange;
-    private uint maxRecycle = 0;
-        /*
+
+    /*
+    private uint maxRecycle
     {
         get { return goParent == null ? 100 : goParent.gameObject.GetComponent<LaserVisController>().maxRecycle; }
     }
@@ -35,8 +36,10 @@ public class LaserScanView : MonoBehaviour
     public delegate void RecycleCallback(GameObject me);
     public event RecycleCallback Recylce;
 
+    /*
     public delegate void IDiedCallback(GameObject me);
     public event IDiedCallback IDied;
+    */
 
     public void recycle()
     {
@@ -46,7 +49,7 @@ public class LaserScanView : MonoBehaviour
             Recylce(gameObject);
     }
 
-
+    /*
     internal void expire()
     {
         // gameObject.hideFlags |= HideFlags.HideAndDontSave;
@@ -55,28 +58,37 @@ public class LaserScanView : MonoBehaviour
             IDied(gameObject);
         
     }
+    */
 
 
-
-    public void SetScan(float time, LaserScan msg, GameObject _goParent, Transform _posParent)
+    public void SetScan(float time, LaserScan msg, GameObject _goParent, Transform _TF)
     {
-        //compare length of distbuffer and msg.ranges
-        //recreate distance array
         goParent = _goParent;
-        posParent = _posParent;
+        TF = _TF;
         recycleCount++;
-        gameObject.SetActive(true);
         angMin = msg.angle_min;
         angInc = msg.angle_increment;
         maxRange = msg.range_max;
         minRange = msg.range_min;
         lastUpdate = time;
+
         if (distBuffer == null || distBuffer.Length != msg.ranges.Length)
             distBuffer = new float[msg.ranges.Length];
-        //for(int i=0;i<msg.ranges.Length;i++)
-        //    distBuffer[i] = 1.0f;
+
         Array.Copy(msg.ranges, distBuffer, distBuffer.Length);
         changed = true;
+
+        //deactivate old points
+        if (pointBuffer != null)
+        {
+            foreach (GameObject point in pointBuffer)
+            {
+                point.SetActive(false);
+            }
+        }
+        
+        //turn GO on
+        gameObject.SetActive(true);
     }
 
     // Use this for initialization
@@ -97,11 +109,13 @@ public class LaserScanView : MonoBehaviour
             #endregion
 
             #region SHOULD I DIE?
+            /*
             if (recycleCount > maxRecycle)
             {
                // expire();
                 //return;
             }
+            */
             #endregion
 
             if (changed)
@@ -158,7 +172,7 @@ public class LaserScanView : MonoBehaviour
                     }
                     pointBuffer[i].transform.localScale = new Vector3(pointSize, pointSize, pointSize);
                 //TODO: SET THE POSITION for pointBuffer[i] based on distBuffer[i]
-                    Vector3 parentPos = posParent.position;
+                    Vector3 parentPos = TF.position;
                 emQuaternion rot = new emQuaternion(0, 0, 0, 1);
                 emVector3 pos = new emVector3((float)(distBuffer[i] * Math.Cos(angMin + angInc * i)), (float)(distBuffer[i] * Math.Sin(angMin + angInc * i)), 0f);
                 pointBuffer[i].transform.localPosition = pos.UnityPosition;
@@ -166,8 +180,8 @@ public class LaserScanView : MonoBehaviour
                 pointBuffer[i].SetActive(true);
             }
             gameObject.SetActive(false);
-            transform.position = posParent.position;
-            transform.rotation = posParent.rotation;
+            transform.position = TF.position;
+            transform.rotation = TF.rotation;
             gameObject.SetActive(true);
 
             #endregion

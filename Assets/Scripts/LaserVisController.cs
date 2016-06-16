@@ -8,25 +8,23 @@ using System.Linq;
 
 public class LaserVisController : SensorTFInterface
 {
+    //Ros stuff
+    private NodeHandle nh = null;
+    private Subscriber<LaserScan> subscriber;
+
+    //various collections 
     SortedList<DateTime, LaserScan> toDraw = new SortedList<DateTime, LaserScan>();
     List<GameObject> recycle = new List<GameObject>();
     List<GameObject> active = new List<GameObject>();
 
-    Messages.std_msgs.Time lastStamp = null;
-
+    private Messages.std_msgs.Time lastStamp = null; //used to check for out of date msgs
     private GameObject points; //will become child(0), used for cloning
-    private NodeHandle nh = null;
-    private Subscriber<LaserScan> subscriber;
 
     public float pointSize = 1;
-    //curently not in use
-    private uint maxRecycle = 100;
     public float Decay_Time = 0f;
+    //curently not in use
+    //private uint maxRecycle = 100;
 
-  
-    public bool Debug_Messages = false;
-
-    // Use this for initialization
     void Start()
     {
         rosmanager.StartROS(this,() => {
@@ -34,8 +32,6 @@ public class LaserVisController : SensorTFInterface
             subscriber = nh.subscribe<LaserScan>(topic, 1, scancb);
         });
 
-
-        //get the TEMPLATE view (our only child 
         points = transform.GetChild(0).gameObject;
         points.hideFlags |= HideFlags.HideAndDontSave;
         points.SetActive(false);
@@ -63,6 +59,10 @@ public class LaserVisController : SensorTFInterface
 
     }
 
+    //TODO keep toDraw count at bay when decay times are low,
+    //Manage Recycle count when decay time is switched from a high state
+    //to a low state
+
     // Update is called once per frame
     void Update()
     {
@@ -72,23 +72,21 @@ public class LaserVisController : SensorTFInterface
             lock (toDraw)
                 while (toDraw.Count() > 1)
                 {
-                    remFirstFromToDraw();
+                    //drop off extra toDraws while decay time is 0
+                    remOldestFromToDraw();
                 }
+
             lock(active)
-                while(countActive() > 1)
+                while(active.Count() > 1)
                 {
-                    //active.Last
-                    remFirstFromActive().GetComponent<LaserScanView>().recycle();
-                    //active.Last().GetComponent<LaserScanView>().recycle();
-                }          
+                    //decay has been set to 0, clear active list leaving just 1
+                    active.First().GetComponent<LaserScanView>().recycle();
+                }
         }
 
         lock(toDraw)
         {
-            //kill ones that should already be expired
-            //while (toDraw.Count > 0 && toDraw.ElementAt(0).Key < ROS.GetTime(ROS.GetTime()).Subtract(TimeSpan.FromSeconds(Decay_Time)))
-             //   remFirstFromToDraw();
-            //draw ones that aren't
+
             while (toDraw.Count() > 0)
             {
                 GameObject newone = null;
@@ -98,13 +96,8 @@ public class LaserVisController : SensorTFInterface
                     if (recycle.Count() > 0)
                     {
                         need_a_new_one = false;
-                        newone = remFirstFromRecycle();
-                        /*
-                        if (Decay_Time < 0.0001f) //something fucky about this
-                            clearRecycle();
-                            */
+                        newone = popRecycle();
                     }
-
 
                 if (need_a_new_one)
                 {
@@ -115,10 +108,23 @@ public class LaserVisController : SensorTFInterface
 
                     newone.GetComponent<LaserScanView>().Recylce += (oldScan) =>
                     {
-                        remFromActive(oldScan);
-                        addToRecycle(oldScan);
+                        lock (active)
+                        {
+                            active.Remove(oldScan);
+                        }
+                        lock (recycle)
+                        {
+                            recycle.Add(oldScan);
+                        }
                     };
-
+                    /*
+                        currently not in use, may be implemented later to handle
+                        cleaning up recycled GO's when the recycle list is overly 
+                        large.
+                        Consider checking how frequently a GO has been used based
+                        on decay time.
+                    */
+                    /*
                     newone.GetComponent<LaserScanView>().IDied += (deadScan) =>
                     {
 
@@ -126,9 +132,10 @@ public class LaserVisController : SensorTFInterface
                         deadScan.transform.SetParent(null); //disconnect from parent
                         Destroy(deadScan); //destroy object
                     };
+                    */
                 }
 
-                KeyValuePair<DateTime, LaserScan>? oldest = remFirstFromToDraw();
+                KeyValuePair<DateTime, LaserScan>? oldest = remOldestFromToDraw();
                 newone.GetComponent<LaserScanView>().SetScan(Time.fixedTime, oldest.Value.Value, gameObject, TF);
 
                 active.Add(newone);
@@ -142,88 +149,29 @@ public class LaserVisController : SensorTFInterface
     **/
 
     #region ToDraw interface
-    void addToDraw(LaserScan scanIn)
-    {
-        toDraw.Add(ROS.GetTime(scanIn.header.stamp), scanIn);
-    }
 
-    KeyValuePair<DateTime, LaserScan>? remFirstFromToDraw()
+    KeyValuePair<DateTime, LaserScan>? remOldestFromToDraw()
     {
         if (toDraw.Count == 0) return null;
         var min = toDraw.Keys.Min();
         var kvp = new KeyValuePair<DateTime, LaserScan>(min, toDraw[min]);
         toDraw.Remove(min);
         return new Nullable<KeyValuePair<DateTime, LaserScan>>(kvp);
-        //KeyValuePair<DateTime, LaserScan> scanSeqPairOut = toDraw.FirstOrDefault();
-       // toDraw.Remove(scanSeqPairOut.Key);
-      //  return scanSeqPairOut;
-        /*if (!scanSeqPairOut.Equals(default(KeyValuePair<DateTime, LaserScan>)))
-        {
-            toDraw.Remove(scanSeqPairOut.Key);
-        }
-        return scanSeqPairOut;*/
     }
 
     #endregion
 
     #region Recycle interface
-    void addToRecycle(GameObject gameObjIn)
-    {
-        lock (recycle)
-        {
-            recycle.Add(gameObjIn);
-        }
-    }
 
-    GameObject remFirstFromRecycle()
+    GameObject popRecycle()
     {
         GameObject gameObjOut;
-        //recycle.Add(gameObjIn);
         gameObjOut = recycle.FirstOrDefault().gameObject;
-        /*if (!gameObjOut.Equals(default(GameObject)))
-        {*/
-            recycle.RemoveAt(0);
-        //}
+        recycle.RemoveAt(0);
         return gameObjOut;
-    }
-
-    void remFromRecycle(GameObject gameObjOut)
-    {
-         recycle.Remove(gameObject);
-    }
-    #endregion
-
-    #region Active interface
-    GameObject getFromActive (int index)
-    {
-        GameObject gameObjOut;
-            gameObjOut = active.ElementAt(index);
-        return gameObjOut;
-    }
-
-    GameObject remFirstFromActive()
-    {
-        GameObject gameObjOut;
-            gameObjOut = active.ElementAt(0);
-            active.RemoveAt(0);
-        return gameObjOut;
-    }
-
-    void remFromActive(GameObject gameObjToRem)
-    {
-        lock (active)
-        {
-            active.Remove(gameObjToRem);
-        }
-    }
-
-    int countActive()
-    {
-        int count;
-        count = active.Count();
-
-        return count;
     }
 
     #endregion
+
+  
 }

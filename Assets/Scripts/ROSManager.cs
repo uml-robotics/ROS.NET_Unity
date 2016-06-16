@@ -19,6 +19,18 @@ public class ROSMonoBehavior : MonoBehaviour
     static ROSMonoBehavior()
     {
         rosmanager = new ROSManager();
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.playmodeStateChanged = () =>
+        {
+            if (!EditorApplication.isPlaying && !EditorApplication.isPaused)
+            {
+                if (ROS.ok || ROS.isStarted())
+                    ROSManager.StopROS();
+            }
+            else if (EditorApplication.isPlaying)
+                rosmanager.StartROS(null, null);
+        };
+#endif
     }
 }
 
@@ -37,30 +49,44 @@ public class ROSManager
     /// <returns>Whether ros.net initialization can continue</returns>
     public void StartROS(MonoBehaviour caller, Action whensuccessful)
     {
-        Action whatToDo = () => {
-#if UNITY_EDITOR
-            if (EditorApplication.isPlaying)
+        if (whensuccessful != null)
+        {
+            Action whatToDo = () =>
             {
-#endif
-                if (!ROS.isStarted())
-                {
-                    ROS.Init(new string[0], "unity_test_" + DateTime.Now.Ticks);
-                    XmlRpcUtil.SetLogLevel(XmlRpcUtil.XMLRPC_LOG_LEVEL.ERROR);
-                    tf.net.Transformer.LateInit();
-                }
-                whensuccessful();
 #if UNITY_EDITOR
-            }
+                if (EditorApplication.isPlaying)
+                {
 #endif
-        };
-        MasterChooserController MasterChooser = caller.transform.root.GetComponentInChildren<MasterChooserController>(true);
-        if (MasterChooser == null || !MasterChooser.checkNeeded())
-        {
-            whatToDo();
+                    if (!ROS.isStarted())
+                    {
+                        ROS.Init(new string[0], "unity_test_" + DateTime.Now.Ticks);
+                        XmlRpcUtil.SetLogLevel(XmlRpcUtil.XMLRPC_LOG_LEVEL.ERROR);
+                        tf.net.Transformer.LateInit();
+                    }
+                    if (whensuccessful != null)
+                        whensuccessful();
+#if UNITY_EDITOR
+                }
+#endif
+            };
+            if (caller != null)
+            {
+                MasterChooserController MasterChooser = caller.transform.root.GetComponentInChildren<MasterChooserController>(true);
+                if (MasterChooser == null || !MasterChooser.checkNeeded())
+                {
+                    whatToDo();
+                }
+                else if (!MasterChooser.ShowIfNeeded(whatToDo))
+                {
+                    Debug.LogError("Failed to test for applicability, show, or handle masterchooser input");
+                }
+            }
         }
-        else if (!MasterChooser.ShowIfNeeded(whatToDo))
+        else if (!ROS.isStarted())
         {
-            Debug.LogError("Failed to test for applicability, show, or handle masterchooser input");
+            ROS.Init(new string[0], "unity_test_" + DateTime.Now.Ticks);
+            XmlRpcUtil.SetLogLevel(XmlRpcUtil.XMLRPC_LOG_LEVEL.ERROR);
+            tf.net.Transformer.LateInit();
         }
 
         lock (loggerlock)
@@ -69,7 +95,7 @@ public class ROSManager
             {
                 string validlogpath = null;
                 string filename = "unity_test_" + DateTime.Now.Ticks + ".log";
-                foreach (string basepath in new[] {Application.dataPath, "/sdcard/ROS.NET_Logs/"})
+                foreach (string basepath in new[] { Application.dataPath, "/sdcard/ROS.NET_Logs/" })
                 {
                     if (Directory.Exists(basepath))
                     {

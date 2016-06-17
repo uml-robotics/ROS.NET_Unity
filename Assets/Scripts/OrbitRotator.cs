@@ -24,7 +24,6 @@ public class OrbitRotator : MonoBehaviour
     public bool relative = false;
     public Component Pivot;
     public Component Mast;
-    public Component Translate;
         
     private Camera cam {
         get
@@ -76,11 +75,10 @@ public class OrbitRotator : MonoBehaviour
 
         if (m_OnClickPointerOrigin == null)
         {
-            m_OnClickPointerOrigin = cam.ScreenToViewportPoint(Input.mousePosition);
+            m_OnClickPointerOrigin = cam.ScreenToViewportPoint(CrossPlatformInputManager.mousePosition);
             m_OnClickTFOrigin = transform.position;
         }
-        Vector3 next_pos = cam.ScreenToViewportPoint(Input.mousePosition);
-        Vector3 delta_click = m_OnClickPointerOrigin.Value - next_pos;
+        Vector3 delta_click = m_OnClickPointerOrigin.Value - cam.ScreenToViewportPoint(CrossPlatformInputManager.mousePosition);
         transform.position = transform.TransformVector(new Vector3((delta_click.x * translationSpeed), 0f, (delta_click.y * translationSpeed))) + m_OnClickTFOrigin;
     
         //float inputH = CrossPlatformInputManager.GetAxis("Mouse X");

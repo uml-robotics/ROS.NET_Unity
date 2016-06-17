@@ -5,6 +5,7 @@ using Ros_CSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 
 public class LaserVisController : SensorTFInterface
 {
@@ -55,7 +56,13 @@ public class LaserVisController : SensorTFInterface
         lastStamp = argument.header.stamp;
 
         lock (toDraw)
+        {
             toDraw.Add(ROS.GetTime(argument.header.stamp), argument);
+        }
+
+        
+     
+       
 
     }
 

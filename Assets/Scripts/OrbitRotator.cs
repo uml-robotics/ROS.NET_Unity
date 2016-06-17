@@ -17,13 +17,24 @@ public class OrbitRotator : MonoBehaviour
     // to have no constraints on an axis, set the rotationRange to 360 or greater.
     public Vector2 rotationRange = new Vector3(90, 90);
     public float rotationSpeed = 5;
+    public float translationSpeed = 20;
     public float dampingTime = 0.0f;
     public bool autoZeroVerticalOnMobile = true;
     public bool autoZeroHorizontalOnMobile = false;
     public bool relative = false;
     public Component Pivot;
     public Component Mast;
+    public Component Translate;
         
+    private Camera cam {
+        get
+        {
+            return gameObject.GetComponentInChildren<Camera>();
+        }
+    }
+    private Vector3? m_OnClickPointerOrigin;
+    private Vector3 m_OnClickTFOrigin;
+
     private Vector3 m_TargetAngles;
     private Vector3 m_FollowAngles;
     private Vector3 m_FollowVelocity;
@@ -33,7 +44,7 @@ public class OrbitRotator : MonoBehaviour
     private void Start()
     {
         m_OriginalRotation = Pivot.transform.localRotation;
-        m_OriginalOrbitRotation = transform.localRotation;
+        m_OriginalOrbitRotation =  transform.localRotation;
     }
 
 
@@ -59,11 +70,21 @@ public class OrbitRotator : MonoBehaviour
     {
         if (!CrossPlatformInputManager.GetButton("Fire3"))
         {
+            m_OnClickPointerOrigin = null;
             return;
         }
-        float inputH = CrossPlatformInputManager.GetAxis("Mouse X");
-        float inputV = CrossPlatformInputManager.GetAxis("Mouse Y");
-        //TODO: Move camera origin on plane parallel to viewport
+
+        if (m_OnClickPointerOrigin == null)
+        {
+            m_OnClickPointerOrigin = cam.ScreenToViewportPoint(Input.mousePosition);
+            m_OnClickTFOrigin = transform.position;
+        }
+        Vector3 next_pos = cam.ScreenToViewportPoint(Input.mousePosition);
+        Vector3 delta_click = m_OnClickPointerOrigin.Value - next_pos;
+        transform.position = transform.TransformVector(new Vector3((delta_click.x * translationSpeed), 0f, (delta_click.y * translationSpeed))) + m_OnClickTFOrigin;
+    
+        //float inputH = CrossPlatformInputManager.GetAxis("Mouse X");
+        //float inputV = CrossPlatformInputManager.GetAxis("Mouse Y");
     }
 
     private void HandlePivot()

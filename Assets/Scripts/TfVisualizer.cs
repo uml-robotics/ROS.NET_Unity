@@ -139,26 +139,13 @@ public class TfVisualizer : ROSMonoBehavior
                 tree[tf.child_frame_id].gameObject.SetActive(true);
                 tree[tf.child_frame_id].localPosition = pos;
                 tree[tf.child_frame_id].localRotation = rot;
+                tree[tf.child_frame_id].GetChild(0).localScale = new Vector3(axis_scale, axis_scale, axis_scale);
             }
         }
 
         AxesHider.update(show_axes);
         LabelCorrector.update(show_labels);
         TransformLineConnector.update(show_lines);
-        foreach (GameObject go in GameObject.FindGameObjectsWithTag("TFAxis"))
-        {
-            go.transform.localScale = new Vector3(axis_scale, axis_scale, axis_scale);
-            /*if (go.transform.parent.gameObject != Root)
-            {
-                for (int i = 0; i < go.transform.parent.childCount; i++)
-                {
-                    if (i != go.transform.GetSiblingIndex())
-                    {
-                        go.transform.parent.GetChild(i).localScale = new Vector3(1.0f / axis_scale, 1.0f / axis_scale, 1.0f / axis_scale);
-                    }
-                }
-                go.transform.parent.localScale = new Vector3(1.0f / axis_scale, 1.0f / axis_scale, 1.0f / axis_scale);
-            }*/
-        }
+        Root.GetChild(0).localScale = new Vector3(axis_scale, axis_scale, axis_scale);
     }
 }

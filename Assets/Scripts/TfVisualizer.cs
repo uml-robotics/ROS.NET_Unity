@@ -117,7 +117,7 @@ public class TfVisualizer : ROSMonoBehavior
                     if (tree.TryGetValue(tf.frame_id, out value1))
                         Template.SetParent(value1);
                     else
-                        Debug.LogWarning(string.Format("The parent ({0}) of {1} is not in the tree yet!",tf.frame_id,tf.child_frame_id));
+                        Debug.LogWarning(string.Format("The parent ({0}) of {1} is not in the tree yet!", tf.frame_id, tf.child_frame_id));
 
                     Transform newframe = (Transform)Instantiate(Template, Template.localPosition, Template.localRotation);
                     hideChildrenInHierarchy(newframe);
@@ -131,46 +131,21 @@ public class TfVisualizer : ROSMonoBehavior
                 Transform value;
                 if (tree.TryGetValue(tf.frame_id, out value))
                 {
+                    value.gameObject.SetActive(true);
                     tree[tf.child_frame_id].SetParent(value, false);
-                    tree[tf.child_frame_id].gameObject.SetActive(true);
-                    if (!value.gameObject.activeInHierarchy)
-                        value.gameObject.SetActive(true);
                 }
-                else
-                    tree[tf.child_frame_id].gameObject.SetActive(false);
-
+                if (value != null && !value.gameObject.activeInHierarchy)
+                    value.gameObject.SetActive(true);
+                tree[tf.child_frame_id].gameObject.SetActive(true);
                 tree[tf.child_frame_id].localPosition = pos;
                 tree[tf.child_frame_id].localRotation = rot;
+                tree[tf.child_frame_id].GetChild(0).localScale = new Vector3(axis_scale, axis_scale, axis_scale);
             }
         }
 
         AxesHider.update(show_axes);
         LabelCorrector.update(show_labels);
         TransformLineConnector.update(show_lines);
-        if (show_axes && Math.Abs(_axis_scale - axis_scale) > 0.001 && axis_scale > 0.001)
-        {
-            _axis_scale = axis_scale;
-            foreach (GameObject go in GameObject.FindGameObjectsWithTag("TFAxis"))
-            {
-                go.transform.localScale = new Vector3(axis_scale, axis_scale, axis_scale);
-                /*if (go.transform.parent.gameObject != Root)
-                {
-                    for (int i = 0; i < go.transform.parent.childCount; i++)
-                    {
-                        if (i != go.transform.GetSiblingIndex())
-                        {
-                            go.transform.parent.GetChild(i).localScale = new Vector3(1.0f / axis_scale, 1.0f / axis_scale, 1.0f / axis_scale);
-                        }
-                    }
-                    go.transform.parent.localScale = new Vector3(1.0f / axis_scale, 1.0f / axis_scale, 1.0f / axis_scale);
-                }*/
-            }
-        }
+        Root.GetChild(0).localScale = new Vector3(axis_scale, axis_scale, axis_scale);
     }
-
-    public bool queryTransforms(string tfName, out Transform val)
-    {
-        return tree.TryGetValue(tfName, out val);
-    }
-
 }

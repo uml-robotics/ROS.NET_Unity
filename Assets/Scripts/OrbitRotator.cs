@@ -34,6 +34,8 @@ public class OrbitRotator : MonoBehaviour
     private Vector3? m_OnClickPointerOrigin;
     private Vector3 m_OnClickTFOrigin;
 
+    
+
     private Vector3 m_TargetAngles;
     private Vector3 m_FollowAngles;
     private Vector3 m_FollowVelocity;
@@ -56,13 +58,20 @@ public class OrbitRotator : MonoBehaviour
 
     private void HandleZoom()
     {
-        //TODO: handle mouse wheel
-        if (!CrossPlatformInputManager.GetButton("Fire2"))
+        Vector2 scrollDelta = Input.mouseScrollDelta;
+        if (!scrollDelta.Equals(Vector2.zero))
         {
-            return;
+            Mast.transform.localPosition = new Vector3(Mast.transform.localPosition.x, Mast.transform.localPosition.y, Mast.transform.localPosition.z + scrollDelta.y * 2f);
         }
-        float inputV = CrossPlatformInputManager.GetAxis("Mouse Y");
-        Mast.transform.localPosition = new Vector3(Mast.transform.localPosition.x, Mast.transform.localPosition.y, Mast.transform.localPosition.z + inputV);
+        else
+        {
+            if (!CrossPlatformInputManager.GetButton("Fire2"))
+            {
+                return;
+            }
+            float inputV = CrossPlatformInputManager.GetAxis("Mouse Y");
+            Mast.transform.localPosition = new Vector3(Mast.transform.localPosition.x, Mast.transform.localPosition.y, Mast.transform.localPosition.z + inputV);
+        }
     }
 
     private void HandleTranslate()

@@ -145,24 +145,20 @@ public class TfVisualizer : ROSMonoBehavior
         AxesHider.update(show_axes);
         LabelCorrector.update(show_labels);
         TransformLineConnector.update(show_lines);
-        if (show_axes && Math.Abs(_axis_scale - axis_scale) > 0.001 && axis_scale > 0.001)
+        foreach (GameObject go in GameObject.FindGameObjectsWithTag("TFAxis"))
         {
-            _axis_scale = axis_scale;
-            foreach (GameObject go in GameObject.FindGameObjectsWithTag("TFAxis"))
+            go.transform.localScale = new Vector3(axis_scale, axis_scale, axis_scale);
+            /*if (go.transform.parent.gameObject != Root)
             {
-                go.transform.localScale = new Vector3(axis_scale, axis_scale, axis_scale);
-                /*if (go.transform.parent.gameObject != Root)
+                for (int i = 0; i < go.transform.parent.childCount; i++)
                 {
-                    for (int i = 0; i < go.transform.parent.childCount; i++)
+                    if (i != go.transform.GetSiblingIndex())
                     {
-                        if (i != go.transform.GetSiblingIndex())
-                        {
-                            go.transform.parent.GetChild(i).localScale = new Vector3(1.0f / axis_scale, 1.0f / axis_scale, 1.0f / axis_scale);
-                        }
+                        go.transform.parent.GetChild(i).localScale = new Vector3(1.0f / axis_scale, 1.0f / axis_scale, 1.0f / axis_scale);
                     }
-                    go.transform.parent.localScale = new Vector3(1.0f / axis_scale, 1.0f / axis_scale, 1.0f / axis_scale);
-                }*/
-            }
+                }
+                go.transform.parent.localScale = new Vector3(1.0f / axis_scale, 1.0f / axis_scale, 1.0f / axis_scale);
+            }*/
         }
     }
 }

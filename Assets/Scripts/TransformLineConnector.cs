@@ -34,14 +34,13 @@ public class TransformLineConnector : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (transform.parent != transform.root)
+        if (transform.parent != transform.root && transform.parent != null)
 	    {
 	        _renderer.enabled = visstate && (transform.parent != transform.root);
             if (_renderer.enabled)
 	        {
-	            Vector3 world = transform.TransformPoint(0f, 0f, 0f);
-	            Vector3 relativetoparentframe = transform.root.TransformVector(world);
-	            _renderer.SetPosition(1, relativetoparentframe);
+                _renderer.SetPosition(0, transform.parent.position);
+	            _renderer.SetPosition(1, transform.position);
 	        }
 	    }
 	}

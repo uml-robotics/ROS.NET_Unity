@@ -25,12 +25,12 @@ public class LaserScanView : MonoBehaviour
     */
     private float decay
     {
-        get { return goParent == null ? 0f : goParent.gameObject.GetComponent<LaserVisController>().Decay_Time; }
+        get { return goParent == null ? 0f : goParent.gameObject.GetComponent<LaserViewController>().Decay_Time; }
     }
     
     private float pointSize
     {
-        get { return goParent == null ? 1f : goParent.gameObject.GetComponent<LaserVisController>().pointSize; }
+        get { return goParent == null ? 1f : goParent.gameObject.GetComponent<LaserViewController>().pointSize; }
     }
 
     public delegate void RecycleCallback(GameObject me);

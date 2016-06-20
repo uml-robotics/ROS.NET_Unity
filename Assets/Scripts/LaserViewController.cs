@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 
-public class LaserVisController : SensorTFInterface
+public class LaserViewController : SensorTFInterface
 {
     //Ros stuff
     private NodeHandle nh = null;

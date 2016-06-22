@@ -148,4 +148,8 @@ public class TfVisualizer : ROSMonoBehavior
         TransformLineConnector.update(show_lines);
         Root.GetChild(0).localScale = new Vector3(axis_scale, axis_scale, axis_scale);
     }
+    public bool queryTransforms(string tfName, out Transform val)
+    {
+        return tree.TryGetValue(tfName, out val);
+    }
 }

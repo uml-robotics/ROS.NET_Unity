@@ -58,6 +58,11 @@ public class OrbitRotator : MonoBehaviour
 
     private void HandleZoom()
     {
+        //hot fix: This will prevent scroll-wheel from moving cam while not on screen
+        //does not work when on a diff screen while using synergy
+        if (Input.mousePosition.x < 0 || Input.mousePosition.x > Screen.width || Input.mousePosition.y < 0 || Input.mousePosition.y > Screen.height)
+            return;
+
         Vector2 scrollDelta = Input.mouseScrollDelta;
         if (!scrollDelta.Equals(Vector2.zero))
         {

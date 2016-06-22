@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 
-public class LaserViewController : SensorTFInterface
+public class LaserViewController : SensorTFInterface<LaserScan>
 {
     //Ros stuff
     private NodeHandle nh = null;
@@ -26,8 +26,10 @@ public class LaserViewController : SensorTFInterface
     //curently not in use
     //private uint maxRecycle = 100;
 
-    void Start()
+    new void Start()
     {
+        base.Start();// must call base classes start function for it to find the propper TF for the sensor
+
         rosmanager.StartROS(this,() => {
             nh = new NodeHandle();
             subscriber = nh.subscribe<LaserScan>(topic, 1, scancb);
@@ -42,12 +44,6 @@ public class LaserViewController : SensorTFInterface
 
     private void scancb(LaserScan argument)
     {
-   
-        //toDraw.Add(argument.header.seq, argument);
-        if(TFName == null || !TFName.Equals(argument.header.frame_id))
-        {
-            TFName = argument.header.frame_id;
-        }
 
         if(lastStamp != null && ROS.GetTime(argument.header.stamp) < ROS.GetTime(lastStamp)) 
         {

@@ -5,30 +5,33 @@ using Ros_CSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Threading;
 
-
-public class SensorTFInterface : ROSMonoBehavior
+public class SensorTFInterface <M> : ROSMonoBehavior where M : IRosMessage, new()
 {
     private static TfVisualizer _tfvisualizer;
     private static object vislock = new object();
-    public TfVisualizer tfvisualizer
+    public String topic; //the topic the base and child class will be subscribing too
+                         //also the topic that the TF will be associated with
+
+    public TfVisualizer tfvisualizer //get tfVisualizer from root to lookup iframe
     {
         get
         {
-            lock(vislock)
+            if (_tfvisualizer == null)
             {
-                if (_tfvisualizer == null)
-                {
-                    _tfvisualizer = transform.root.GetComponentInChildren<TfVisualizer>();
-                }
+                _tfvisualizer = transform.root.GetComponentInChildren<TfVisualizer>();
             }
+            
             return _tfvisualizer;
         }
     }
 
-    public String topic;
-    internal String TFName;
-    internal Transform TF {
+    internal String TFName;//currently being used to lookup the TF, this must be set in the childs callback
+
+    internal Transform TF //this will be the transform the topic is associated with 
+    {
         get
         {
             Transform tfTemp;
@@ -40,32 +43,39 @@ public class SensorTFInterface : ROSMonoBehavior
             if (tfvisualizer.queryTransforms(strTemp, out tfTemp))
                 return tfTemp;
             return transform;
-        } }
-
-
-
-
-    //Recursively search for a tf that is a grandchild of rootTf
-    Transform getTf(Transform rootTf, String TfName)
-    {
-        Transform TfOut;
-        TfOut = rootTf.Find(TfName);
-
-        if (TfOut != null)
-        {
-            return TfOut;
         }
+    }
 
-        foreach (Transform tf in rootTf)
+    private NodeHandle nh;
+
+    private Subscriber<M>  subscriber;
+
+    internal void Start()
+    {
+        rosmanager.StartROS(this, () => {
+            nh = new NodeHandle();
+            subscriber = nh.subscribe<M>(topic, 1, callBack);
+        });
+
+    }
+
+    private void callBack(M msg) //figures out the frameid of the sensor 
+    {
+        
+        if (msg.HasHeader && TFName == null)
         {
-            Debug.Log("TFNAME: " + tf.name);
-            TfOut = getTf(tf, TfName);
-            if (TfOut != null)
-            {
-                return TfOut;
+            FieldInfo fi = msg.GetType().GetFields().First((a)=>{ return a.FieldType.Equals(typeof(Messages.std_msgs.Header)); });
+            if (fi != null)
+            { 
+                TFName = ((Messages.std_msgs.Header)fi.GetValue(msg)).frame_id;
+                // nh.shutdown(); seems to work but prints a "removeByID w/ WRONG THREAD ID" in log messages
+                return;
             }
         }
-        return TfOut;
+        //TODO possibly kill nh or subscriber when frame_id is found
+        Thread.Sleep(1000);
+        
+        
     }
 
 }

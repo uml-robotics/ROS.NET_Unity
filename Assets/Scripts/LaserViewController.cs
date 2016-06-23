@@ -56,13 +56,8 @@ public class LaserViewController : SensorTFInterface<LaserScan>
             toDraw.Add(ROS.GetTime(argument.header.stamp), argument);
         }
 
-        
-     
-       
-
     }
 
-    //TODO keep toDraw count at bay when decay times is 0
 
     // Update is called once per frame
     void Update()

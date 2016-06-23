@@ -104,7 +104,6 @@ public class LaserScanView : MonoBehaviour
                 }
                 if ((Time.fixedTime - lastRecycle) > (decay + 1f))
                 {
-                    //Debug.Log("Died!");
                     expire();
                     return;
                 }
@@ -115,15 +114,6 @@ public class LaserScanView : MonoBehaviour
             }
             #endregion
 
-            #region SHOULD I DIE?
-            /*
-            if (recycleCount > maxRecycle)
-            {
-               // expire();
-                //return;
-            }
-            */
-            #endregion
 
             if (changed)
             {

@@ -15,14 +15,9 @@ public class LaserScanView : MonoBehaviour
     private Transform TF;
     private uint recycleCount = 0;
     private float lastUpdate;
+    private float lastRecycle = 0;
     private float angMin, angInc, maxRange, minRange;
-
-    /*
-    private uint maxRecycle
-    {
-        get { return goParent == null ? 100 : goParent.gameObject.GetComponent<LaserVisController>().maxRecycle; }
-    }
-    */
+    
     private float decay
     {
         get { return goParent == null ? 0f : goParent.gameObject.GetComponent<LaserViewController>().Decay_Time; }
@@ -36,10 +31,10 @@ public class LaserScanView : MonoBehaviour
     public delegate void RecycleCallback(GameObject me);
     public event RecycleCallback Recylce;
 
-    /*
+    
     public delegate void IDiedCallback(GameObject me);
     public event IDiedCallback IDied;
-    */
+    
 
     public void recycle()
     {
@@ -49,7 +44,7 @@ public class LaserScanView : MonoBehaviour
             Recylce(gameObject);
     }
 
-    /*
+    
     internal void expire()
     {
         // gameObject.hideFlags |= HideFlags.HideAndDontSave;
@@ -58,7 +53,7 @@ public class LaserScanView : MonoBehaviour
             IDied(gameObject);
         
     }
-    */
+    
 
 
     public void SetScan(float time, LaserScan msg, GameObject _goParent, Transform _TF)
@@ -103,6 +98,18 @@ public class LaserScanView : MonoBehaviour
             #region SHOULD I be Recycled?
             if (decay > 0.0001 && (Time.fixedTime - lastUpdate) > decay)
             {
+                if(lastRecycle < 0.0001f)
+                {
+                    lastRecycle = Time.fixedTime;
+                }
+                if ((Time.fixedTime - lastRecycle) > (decay + 1f))
+                {
+                    //Debug.Log("Died!");
+                    expire();
+                    return;
+                }
+                lastRecycle = Time.fixedTime;
+                
                 recycle();
                 return;
             }

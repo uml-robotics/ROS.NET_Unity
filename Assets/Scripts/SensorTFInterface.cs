@@ -68,13 +68,11 @@ public class SensorTFInterface <M> : ROSMonoBehavior where M : IRosMessage, new(
             if (fi != null)
             { 
                 TFName = ((Messages.std_msgs.Header)fi.GetValue(msg)).frame_id;
-                // nh.shutdown(); seems to work but prints a "removeByID w/ WRONG THREAD ID" in log messages
+                 nh.shutdown();// seems to work but prints a "removeByID w/ WRONG THREAD ID" in log messages
                 return;
             }
         }
         //TODO possibly kill nh or subscriber when frame_id is found
-        Thread.Sleep(1000);
-        
         
     }
 

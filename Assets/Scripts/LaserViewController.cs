@@ -62,9 +62,7 @@ public class LaserViewController : SensorTFInterface<LaserScan>
 
     }
 
-    //TODO keep toDraw count at bay when decay times are low,
-    //Manage Recycle count when decay time is switched from a high state
-    //to a low state
+    //TODO keep toDraw count at bay when decay times is 0
 
     // Update is called once per frame
     void Update()
@@ -83,7 +81,7 @@ public class LaserViewController : SensorTFInterface<LaserScan>
                 while(active.Count() > 1)
                 {
                     //decay has been set to 0, clear active list leaving just 1
-                    active.First().GetComponent<LaserScanView>().recycle();
+                    active.First().GetComponent<LaserScanView>().expire();
                 }
         }
 
@@ -107,7 +105,7 @@ public class LaserViewController : SensorTFInterface<LaserScan>
                     newone = Instantiate(points.transform).gameObject;
                     newone.transform.SetParent(null, false);
 
-                    //newone.hideFlags |= HideFlags.HideAndDontSave;
+                    newone.hideFlags |= HideFlags.HideInHierarchy;
 
                     newone.GetComponent<LaserScanView>().Recylce += (oldScan) =>
                     {
@@ -120,28 +118,22 @@ public class LaserViewController : SensorTFInterface<LaserScan>
                             recycle.Add(oldScan);
                         }
                     };
-                    /*
-                        currently not in use, may be implemented later to handle
-                        cleaning up recycled GO's when the recycle list is overly 
-                        large.
-                        Consider checking how frequently a GO has been used based
-                        on decay time.
-                    */
-                    /*
+                 
+                    
                     newone.GetComponent<LaserScanView>().IDied += (deadScan) =>
                     {
-
-                        remFromRecycle(deadScan);
-                        deadScan.transform.SetParent(null); //disconnect from parent
+                        lock (active)
+                        {
+                            active.Remove(deadScan);
+                        }
                         Destroy(deadScan); //destroy object
                     };
-                    */
+                    
                 }
 
                 KeyValuePair<DateTime, LaserScan>? oldest = remOldestFromToDraw();
-                newone.GetComponent<LaserScanView>().SetScan(Time.fixedTime, oldest.Value.Value, gameObject, TF);
-
                 active.Add(newone);
+                newone.GetComponent<LaserScanView>().SetScan(Time.fixedTime, oldest.Value.Value, gameObject, TF);
 
             }
         }

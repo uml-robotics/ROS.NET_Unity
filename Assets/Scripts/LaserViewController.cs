@@ -5,7 +5,6 @@ using Ros_CSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor;
 
 public class LaserViewController : SensorTFInterface<LaserScan>
 {
@@ -21,7 +20,7 @@ public class LaserViewController : SensorTFInterface<LaserScan>
     private Messages.std_msgs.Time lastStamp = null; //used to check for out of date msgs
     private GameObject points; //will become child(0), used for cloning
 
-    public float pointSize = 1;
+    public float pointSize = 0.1f;
     public float Decay_Time = 0f;
     //curently not in use
     //private uint maxRecycle = 100;
@@ -32,7 +31,7 @@ public class LaserViewController : SensorTFInterface<LaserScan>
 
         rosmanager.StartROS(this,() => {
             nh = new NodeHandle();
-            subscriber = nh.subscribe<LaserScan>(topic, 1, scancb);
+            subscriber = nh.subscribe<LaserScan>(NameSpace + topic, 1, scancb);
         });
 
         points = transform.GetChild(0).gameObject;

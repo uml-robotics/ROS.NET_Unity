@@ -25,7 +25,7 @@ public class LaserScanView : MonoBehaviour
     
     private float pointSize
     {
-        get { return goParent == null ? 1f : goParent.gameObject.GetComponent<LaserViewController>().pointSize; }
+        get { return goParent == null ? 0.1f : goParent.gameObject.GetComponent<LaserViewController>().pointSize; }
     }
 
     public delegate void RecycleCallback(GameObject me);

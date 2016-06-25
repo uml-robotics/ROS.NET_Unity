@@ -14,6 +14,11 @@ public class SensorTFInterface <M> : ROSMonoBehavior where M : IRosMessage, new(
     private static object vislock = new object();
     public String topic; //the topic the base and child class will be subscribing too
                          //also the topic that the TF will be associated with
+    public string NameSpace = "/agent1";
+    public void setNamespace(string _NameSpace)
+    {
+        NameSpace = _NameSpace;
+    }
 
     public TfVisualizer tfvisualizer //get tfVisualizer from root to lookup iframe
     {
@@ -28,19 +33,24 @@ public class SensorTFInterface <M> : ROSMonoBehavior where M : IRosMessage, new(
         }
     }
 
-    internal String TFName;//currently being used to lookup the TF, this must be set in the childs callback
+    internal String TFName;//currently being used to lookup the TF
 
     internal Transform TF //this will be the transform the topic is associated with 
     {
         get
         {
+            if(TFName == null)
+            {
+                return transform;
+            }
+
             Transform tfTemp;
             String strTemp = TFName;
             if (!strTemp.StartsWith("/"))
             {
                 strTemp = "/" + strTemp;
             }
-            if (tfvisualizer.queryTransforms(strTemp, out tfTemp))
+            if (tfvisualizer != null && tfvisualizer.queryTransforms(strTemp, out tfTemp))
                 return tfTemp;
             return transform;
         }
@@ -52,9 +62,13 @@ public class SensorTFInterface <M> : ROSMonoBehavior where M : IRosMessage, new(
 
     internal void Start()
     {
+        if(!topic.StartsWith("/"))
+        {
+            topic = "/" + topic;
+        }
         rosmanager.StartROS(this, () => {
             nh = new NodeHandle();
-            subscriber = nh.subscribe<M>(topic, 1, callBack);
+            subscriber = nh.subscribe<M>(NameSpace + topic, 1, callBack);
         });
 
     }

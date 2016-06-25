@@ -7,14 +7,14 @@ using System.Threading;
 using JetBrains.Annotations;
 using Ros_CSharp;
 using UnityEngine;
+using XmlRpc_Wrapper;
 #if UNITY_EDITOR
 using UnityEditor;
-#endif
-using XmlRpc_Wrapper;
-
 [InitializeOnLoad]
+#endif
 public class ROSMonoBehavior : MonoBehaviour
 {
+    
     protected static readonly ROSManager rosmanager;
     static ROSMonoBehavior()
     {

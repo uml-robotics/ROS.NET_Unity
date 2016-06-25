@@ -6,6 +6,13 @@ using Messages.nav_msgs;
 public class OdometryViewController : ROSMonoBehavior {
 
     public string topic;
+    public string NameSpace = "/agent1";
+    public void setNamespace(string _NameSpace)
+    {
+        NameSpace = _NameSpace;
+    }
+
+
     public double positionTolerance = 0.1d; //Distance from last arrow
     public double angleTolerance = 0.1d; //Angular distance from the last arrow
     public int keep = 100; //number of arrows to keep
@@ -35,9 +42,14 @@ public class OdometryViewController : ROSMonoBehavior {
 
     // Use this for initialization
     void Start () {
+
+        if (!topic.StartsWith("/"))
+        {
+            topic = "/" + topic;
+        }
         rosmanager.StartROS(this, () => {
             nh = new NodeHandle();
-            subscriber = nh.subscribe<Odometry>(topic, 1, callBack);
+            subscriber = nh.subscribe<Odometry>(NameSpace + topic, 1, callBack);
         });
 
         arrowGO = transform.GetChild(0).gameObject;

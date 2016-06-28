@@ -10,12 +10,14 @@ public class RobotSubscriptionManagerUI : Editor {
     public override void OnInspectorGUI()
     {
         RobotSubscriptionManager rsmTarget = (RobotSubscriptionManager)target;
-
+        
+        //make RobotSubscriptionManager.cs inspector only visble when not playing
         if (!Application.isPlaying)
             base.DrawDefaultInspector();
+
         //update UI and Masters
         EditorGUILayout.Separator();
-        foreach (Component script in rsmTarget.getMasterScripts())
+        foreach (Component script in rsmTarget.getParentScripts())
         {
             EditorGUILayout.LabelField(script.name);
             foreach (FieldInfo fi in script.GetType().GetFields())
@@ -62,22 +64,17 @@ public class RobotSubscriptionManagerUI : Editor {
 
         //update agents
         if(GUI.changed)
-        foreach (GameObject agent in rsmTarget.getAgents())
-        {
-            foreach (Transform child in agent.transform)
+            foreach (Component script in rsmTarget.getChildScripts())
             {
-                foreach (Component script in child.GetComponents(typeof(MonoBehaviour)))
+                Component parentScript = rsmTarget.getParentScripts().Find((ps) => { return ps.GetType().Equals(script.GetType()); });
+                foreach (FieldInfo fi in script.GetType().GetFields())
                 {
-                    Component parentScript = rsmTarget.getMasterScripts().Find((ps) => { return ps.GetType().Equals(script.GetType()); });
-                    foreach (FieldInfo fi in script.GetType().GetFields())
-                    {
-                        FieldInfo parentFI = parentScript.GetType().GetField(fi.Name);
-                        if (parentFI != null)
-                            fi.SetValue(script, parentFI.GetValue(parentScript));
-                    }
+                    FieldInfo parentFI = parentScript.GetType().GetField(fi.Name);
+                    if (parentFI != null)
+                        fi.SetValue(script, parentFI.GetValue(parentScript));
                 }
             }
-        }            
+                     
     }
 }
 #endif

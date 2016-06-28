@@ -12,8 +12,8 @@ public class RobotSubscriptionManager : ROSMonoBehavior {
     public string CountParamter = "/mrm/robots_count";
 
     BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
-    List<GameObject> agents = new List<GameObject>();
-    List<Component> masterScripts = new List<Component>();
+    List<Component> parentScripts = new List<Component>();
+    List<Component> childScripts = new List<Component>();
     private NodeHandle nh = null;
 
 
@@ -38,19 +38,25 @@ public class RobotSubscriptionManager : ROSMonoBehavior {
             GameObject go = new GameObject();
             go.name = NameSpace + num;
             go.transform.parent = transform.root;
-            agents.Add(go);
             foreach (Transform prefabTF in transform)
             {
                 prefabTF.gameObject.hideFlags |= HideFlags.HideInHierarchy;
+
                 //Maybe put this outside to remove unnecessary loops
                 foreach(Component script in prefabTF.GetComponents(typeof(MonoBehaviour)))
                 {
-                    if(!masterScripts.Contains(script))
-                        masterScripts.Add(script);
+                    if(!parentScripts.Contains(script))
+                        parentScripts.Add(script);
                 }
                 
                 GameObject prefab = Instantiate(prefabTF.gameObject);
                 
+                //add all instantiated objects scripts to child scripts
+                foreach (Component script in prefab.GetComponents(typeof(MonoBehaviour)))
+                {
+                    childScripts.Add(script);
+                }
+
                 prefab.transform.parent = go.transform;
                 prefab.SendMessage("setNamespace", NameSpace + num);
             }
@@ -67,14 +73,13 @@ public class RobotSubscriptionManager : ROSMonoBehavior {
 	void Update () { }
 
     //getters for the UI to get and update settings on the fly
-    public List<Component> getMasterScripts()
+    public List<Component> getParentScripts()
     {
-        return masterScripts;
+        return parentScripts;
     }
-    public List<GameObject> getAgents()
+    public List<Component> getChildScripts()
     {
-        return agents;
-    }
-    
+        return childScripts;
+    }    
 
 }

@@ -5,7 +5,7 @@ using Messages.nav_msgs;
 
 public class OdometryViewController : ROSMonoBehavior {
 
-    public string topic;
+    public string Topic;
     public string NameSpace = "/agent1";
     public void setNamespace(string _NameSpace)
     {
@@ -13,10 +13,10 @@ public class OdometryViewController : ROSMonoBehavior {
     }
 
 
-    public double positionTolerance = 0.1d; //Distance from last arrow
-    public double angleTolerance = 0.1d; //Angular distance from the last arrow
-    public int keep = 100; //number of arrows to keep
-    public float arrowLength = 0.4f; //length of arrow
+    public double PositionTolerance = 0.1d; //Distance from last arrow
+    public double AngleTolerance = 0.1d; //Angular distance from the last arrow
+    public int Keep = 100; //number of arrows to keep
+    public float ArrowLength = 0.4f; //length of arrow
     private float oldArrowLength;
 
     private NodeHandle nh = null;
@@ -43,14 +43,14 @@ public class OdometryViewController : ROSMonoBehavior {
 
     // Use this for initialization
     void Start () {
-        oldArrowLength = arrowLength;
-        if (!topic.StartsWith("/"))
+        oldArrowLength = ArrowLength;
+        if (!Topic.StartsWith("/"))
         {
-            topic = "/" + topic;
+            Topic = "/" + Topic;
         }
         rosmanager.StartROS(this, () => {
             nh = new NodeHandle();
-            subscriber = nh.subscribe<Odometry>(NameSpace + topic, 1, callBack);
+            subscriber = nh.subscribe<Odometry>(NameSpace + Topic, 1, callBack);
         });
 
         arrowGO = transform.GetChild(0).gameObject;
@@ -59,16 +59,16 @@ public class OdometryViewController : ROSMonoBehavior {
 
     // Update is called once per frame
     void Update() {
-        while (Arrows.Count > keep)
+        while (Arrows.Count > Keep)
         {
             Destroy(Arrows.Dequeue());
         }
 
-        if(oldArrowLength != arrowLength)
+        if(oldArrowLength != ArrowLength)
         {
             foreach(GameObject arrow in Arrows)
             {
-                arrow.transform.localScale = new Vector3(arrowLength, arrowLength, arrowLength);
+                arrow.transform.localScale = new Vector3(ArrowLength, ArrowLength, ArrowLength);
             }
         }
 
@@ -87,13 +87,13 @@ public class OdometryViewController : ROSMonoBehavior {
 
             //TODO make Angle tolerance better reflect Rviz. UPDATE Rviz has some weird ass voodoo scalling for their angle tolerance
             //TODO update all arrows when size changes
-            if ( (currentPos - lastPos).magnitude > (positionTolerance) || (Mathf.Pow(Mathf.DeltaAngle(currentQuat.eulerAngles.y, lastQuat.eulerAngles.y), 2)/14400 > angleTolerance ))
+            if ( (currentPos - lastPos).magnitude > (PositionTolerance) || (Mathf.Pow(Mathf.DeltaAngle(currentQuat.eulerAngles.y, lastQuat.eulerAngles.y), 2)/14400 > AngleTolerance ))
             {
                 GameObject arrow = Instantiate(arrowGO);
                 arrow.transform.rotation = (currentQuat * Quaternion.Euler(90, 0, 0));
-                arrow.transform.position = arrow.transform.TransformVector(new Vector3(0f, arrowLength, 0f)) + currentPos;
+                arrow.transform.position = arrow.transform.TransformVector(new Vector3(0f, ArrowLength, 0f)) + currentPos;
                 arrow.SetActive(true);
-                arrow.transform.localScale = new Vector3(arrowLength, arrowLength, arrowLength);
+                arrow.transform.localScale = new Vector3(ArrowLength, ArrowLength, ArrowLength);
                 arrow.hideFlags |= HideFlags.HideInHierarchy;
                 Arrows.Enqueue(arrow);
                 lastPos = currentPos;

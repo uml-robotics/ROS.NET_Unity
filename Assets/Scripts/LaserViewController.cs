@@ -20,8 +20,8 @@ public class LaserViewController : SensorTFInterface<LaserScan>
     private Messages.std_msgs.Time lastStamp = null; //used to check for out of date msgs
     private GameObject points; //will become child(0), used for cloning
 
-    public float pointSize = 0.1f;
-    public float Decay_Time = 0f;
+    public float PointSize = 0.1f;
+    public float DecayTime = 0f;
     //curently not in use
     //private uint maxRecycle = 100;
 
@@ -31,7 +31,7 @@ public class LaserViewController : SensorTFInterface<LaserScan>
 
         rosmanager.StartROS(this,() => {
             nh = new NodeHandle();
-            subscriber = nh.subscribe<LaserScan>(NameSpace + topic, 1, scancb);
+            subscriber = nh.subscribe<LaserScan>(NameSpace + Topic, 1, scancb);
         });
 
         points = transform.GetChild(0).gameObject;
@@ -61,7 +61,7 @@ public class LaserViewController : SensorTFInterface<LaserScan>
     // Update is called once per frame
     void Update()
     {
-        if (Decay_Time < 0.0001f)
+        if (DecayTime < 0.0001f)
         {
 
             lock (toDraw)

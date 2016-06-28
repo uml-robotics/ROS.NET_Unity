@@ -27,7 +27,7 @@ public class RobotSubscriptionManagerUI : Editor {
                 {
                     if (fi.FieldType.Equals(typeof(string)))
                     {
-                        if (!(fi.Name.Equals("topic") || fi.Name.Equals("NameSpace")))
+                        if (!(fi.Name.Equals("Topic") || fi.Name.Equals("NameSpace")))
                         {
                             string temp = EditorGUILayout.TextField(fi.Name, (string)fi.GetValue(script));
                             if (GUI.changed)

@@ -20,12 +20,12 @@ public class LaserScanView : MonoBehaviour
     
     private float decay
     {
-        get { return goParent == null ? 0f : goParent.gameObject.GetComponent<LaserViewController>().Decay_Time; }
+        get { return goParent == null ? 0f : goParent.gameObject.GetComponent<LaserViewController>().DecayTime; }
     }
     
     private float pointSize
     {
-        get { return goParent == null ? 0.1f : goParent.gameObject.GetComponent<LaserViewController>().pointSize; }
+        get { return goParent == null ? 0.1f : goParent.gameObject.GetComponent<LaserViewController>().PointSize; }
     }
 
     public delegate void RecycleCallback(GameObject me);
@@ -159,8 +159,8 @@ public class LaserScanView : MonoBehaviour
                 }
                 #endregion
 
-                #region FOR ALL SPHERES ALL THE TIME
-                for (int i = 0; i < pointBuffer.Length; i++)
+            #region FOR ALL SPHERES ALL THE TIME
+            for (int i = 0; i < pointBuffer.Length; i++)
             {
                 pointBuffer[i].SetActive(false);
                 if (distBuffer[i] > (maxRange - 0.0001f) || distBuffer[i] < (minRange + 0.0001f))
@@ -168,7 +168,6 @@ public class LaserScanView : MonoBehaviour
                         continue;
                     }
                     pointBuffer[i].transform.localScale = new Vector3(pointSize, pointSize, pointSize);
-                //TODO: SET THE POSITION for pointBuffer[i] based on distBuffer[i]
                     Vector3 parentPos = TF.position;
                 emQuaternion rot = new emQuaternion(0, 0, 0, 1);
                 emVector3 pos = new emVector3((float)(distBuffer[i] * Math.Cos(angMin + angInc * i)), (float)(distBuffer[i] * Math.Sin(angMin + angInc * i)), 0f);
@@ -176,10 +175,11 @@ public class LaserScanView : MonoBehaviour
                 pointBuffer[i].transform.localRotation = rot.UnityRotation;
                 pointBuffer[i].SetActive(true);
             }
-            gameObject.SetActive(false);
+            //save position, reset pos of scan views to be their old pose until updates finish
+            //gameObject.SetActive(false);
             transform.position = TF.position;
             transform.rotation = TF.rotation;
-            gameObject.SetActive(true);
+            //gameObject.SetActive(true);
 
             #endregion
             changed = false;

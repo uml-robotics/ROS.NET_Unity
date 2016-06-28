@@ -12,7 +12,7 @@ public class SensorTFInterface <M> : ROSMonoBehavior where M : IRosMessage, new(
 {
     private static TfVisualizer _tfvisualizer;
     private static object vislock = new object();
-    public String topic; //the topic the base and child class will be subscribing too
+    public String Topic; //the topic the base and child class will be subscribing too
                          //also the topic that the TF will be associated with
     public string NameSpace = "/agent1";
     public void setNamespace(string _NameSpace)
@@ -33,12 +33,12 @@ public class SensorTFInterface <M> : ROSMonoBehavior where M : IRosMessage, new(
         }
     }
 
-    internal String TFName;//currently being used to lookup the TF
+    private String TFName;//currently being used to lookup the TF
 
     internal Transform TF //this will be the transform the topic is associated with 
     {
         get
-        {
+        {   
             if(TFName == null)
             {
                 return transform;
@@ -62,13 +62,13 @@ public class SensorTFInterface <M> : ROSMonoBehavior where M : IRosMessage, new(
 
     internal void Start()
     {
-        if(!topic.StartsWith("/"))
+        if(!Topic.StartsWith("/"))
         {
-            topic = "/" + topic;
+            Topic = "/" + Topic;
         }
         rosmanager.StartROS(this, () => {
             nh = new NodeHandle();
-            subscriber = nh.subscribe<M>(NameSpace + topic, 1, callBack);
+            subscriber = nh.subscribe<M>(NameSpace + Topic, 1, callBack);
         });
 
     }
@@ -89,5 +89,7 @@ public class SensorTFInterface <M> : ROSMonoBehavior where M : IRosMessage, new(
         //TODO possibly kill nh or subscriber when frame_id is found
         
     }
+
+
 
 }

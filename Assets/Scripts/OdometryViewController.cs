@@ -17,6 +17,7 @@ public class OdometryViewController : ROSMonoBehavior {
     public double angleTolerance = 0.1d; //Angular distance from the last arrow
     public int keep = 100; //number of arrows to keep
     public float arrowLength = 0.4f; //length of arrow
+    private float oldArrowLength;
 
     private NodeHandle nh = null;
     private Subscriber<Odometry> subscriber;
@@ -42,7 +43,7 @@ public class OdometryViewController : ROSMonoBehavior {
 
     // Use this for initialization
     void Start () {
-
+        oldArrowLength = arrowLength;
         if (!topic.StartsWith("/"))
         {
             topic = "/" + topic;
@@ -61,6 +62,14 @@ public class OdometryViewController : ROSMonoBehavior {
         while (Arrows.Count > keep)
         {
             Destroy(Arrows.Dequeue());
+        }
+
+        if(oldArrowLength != arrowLength)
+        {
+            foreach(GameObject arrow in Arrows)
+            {
+                arrow.transform.localScale = new Vector3(arrowLength, arrowLength, arrowLength);
+            }
         }
 
         lock (currentMsg)

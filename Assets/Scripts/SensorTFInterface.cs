@@ -12,8 +12,12 @@ public class SensorTFInterface <M> : ROSMonoBehavior where M : IRosMessage, new(
 {
     private static TfVisualizer _tfvisualizer;
     private static object vislock = new object();
-    public String Topic; //the topic the base and child class will be subscribing too
-                         //also the topic that the TF will be associated with
+    public bool ChildOfTF = false;
+    public String Topic; //use this on inspector
+    internal string _Topic { get{ return !Topic.StartsWith("/") ? "/" + Topic : Topic;} } //use this in code
+
+    //the topic the base and child class will be subscribing too
+    //also the topic that the TF will be associated with
     public string NameSpace = "/agent1";
     public void setNamespace(string _NameSpace)
     {
@@ -52,6 +56,7 @@ public class SensorTFInterface <M> : ROSMonoBehavior where M : IRosMessage, new(
             }
             if (tfvisualizer != null && tfvisualizer.queryTransforms(strTemp, out tfTemp))
                 return tfTemp;
+
             return transform;
         }
     }
@@ -60,15 +65,13 @@ public class SensorTFInterface <M> : ROSMonoBehavior where M : IRosMessage, new(
 
     private Subscriber<M>  subscriber;
 
+    
+
     internal void Start()
     {
-        if(!Topic.StartsWith("/"))
-        {
-            Topic = "/" + Topic;
-        }
         rosmanager.StartROS(this, () => {
             nh = new NodeHandle();
-            subscriber = nh.subscribe<M>(NameSpace + Topic, 1, callBack);
+            subscriber = nh.subscribe<M>(NameSpace + _Topic, 1, callBack);
         });
 
     }
@@ -82,12 +85,25 @@ public class SensorTFInterface <M> : ROSMonoBehavior where M : IRosMessage, new(
             if (fi != null)
             { 
                 TFName = ((Messages.std_msgs.Header)fi.GetValue(msg)).frame_id;
-                 nh.shutdown();// seems to work but prints a "removeByID w/ WRONG THREAD ID" in log messages
                 return;
             }
         }
-        //TODO possibly kill nh or subscriber when frame_id is found
         
+    }
+
+    internal void Update()
+    {
+       
+        if (ChildOfTF && TF != transform)
+        {
+            transform.parent = TF;
+        }
+        else
+        {
+            transform.position = TF.position;
+            transform.rotation = TF.rotation;
+        }
+       
     }
 
 

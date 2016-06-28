@@ -3,15 +3,7 @@ using System.Collections.Generic;
 using Ros_CSharp;
 using Messages.nav_msgs;
 
-public class OdometryViewController : ROSMonoBehavior {
-
-    public string Topic;
-    public string NameSpace = "/agent1";
-    public void setNamespace(string _NameSpace)
-    {
-        NameSpace = _NameSpace;
-    }
-
+public class OdometryViewController : SensorTFInterface<Odometry> {
 
     public double PositionTolerance = 0.1d; //Distance from last arrow
     public double AngleTolerance = 0.1d; //Angular distance from the last arrow
@@ -31,26 +23,22 @@ public class OdometryViewController : ROSMonoBehavior {
     private Queue<GameObject> Arrows = new Queue<GameObject>();
     private GameObject arrowGO; //arrow gameobject used to represent orientation of object
 
-    private void callBack(Odometry scan)
+    private void callBack(Odometry msg)
     {
         lock(currentMsg)
         {
-            currentMsg = scan;
-            currentPos = RosPointToVector3( scan.pose.pose.position);
-            currentQuat = RosToUnityQuat(scan.pose.pose.orientation);
+            currentMsg = msg;
+            currentPos = RosPointToVector3(msg.pose.pose.position);
+            currentQuat = RosToUnityQuat(msg.pose.pose.orientation);
         }
     }
 
     // Use this for initialization
-    void Start () {
+   new void Start () {
         oldArrowLength = ArrowLength;
-        if (!Topic.StartsWith("/"))
-        {
-            Topic = "/" + Topic;
-        }
         rosmanager.StartROS(this, () => {
             nh = new NodeHandle();
-            subscriber = nh.subscribe<Odometry>(NameSpace + Topic, 1, callBack);
+            subscriber = nh.subscribe<Odometry>(NameSpace + _Topic, 1, callBack);
         });
 
         arrowGO = transform.GetChild(0).gameObject;
@@ -58,7 +46,7 @@ public class OdometryViewController : ROSMonoBehavior {
     }
 
     // Update is called once per frame
-    void Update() {
+  new void Update() {
         while (Arrows.Count > Keep)
         {
             Destroy(Arrows.Dequeue());

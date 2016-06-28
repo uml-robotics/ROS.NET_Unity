@@ -18,11 +18,11 @@ public class RobotSubscriptionManager : ROSMonoBehavior {
 
 
     void Start () {
-       
+       /*
         rosmanager.StartROS(this, () => {
             nh = new NodeHandle();
         });
-        
+        */
 
         int numRobots;
         if (!Int32.TryParse(NumberOfRobots, out numRobots) || NumberOfRobots.Equals(string.Empty))

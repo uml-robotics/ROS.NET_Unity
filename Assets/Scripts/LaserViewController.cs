@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
 using Messages.sensor_msgs;
 using Ros_CSharp;
 using System;
@@ -31,7 +30,7 @@ public class LaserViewController : SensorTFInterface<LaserScan>
 
         rosmanager.StartROS(this,() => {
             nh = new NodeHandle();
-            subscriber = nh.subscribe<LaserScan>(NameSpace + Topic, 1, scancb);
+            subscriber = nh.subscribe<LaserScan>(NameSpace + _Topic, 1, scancb);
         });
 
         points = transform.GetChild(0).gameObject;
@@ -59,8 +58,9 @@ public class LaserViewController : SensorTFInterface<LaserScan>
 
 
     // Update is called once per frame
-    void Update()
+     new void Update()
     {
+        base.Update();
         if (DecayTime < 0.0001f)
         {
 
@@ -81,7 +81,6 @@ public class LaserViewController : SensorTFInterface<LaserScan>
 
         lock(toDraw)
         {
-
             while (toDraw.Count() > 0)
             {
                 GameObject newone = null;

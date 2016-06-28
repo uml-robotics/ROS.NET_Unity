@@ -65,7 +65,7 @@ public class RobotSubscriptionManagerUI : Editor {
                 EditorGUILayout.Space();
             }
 
-            //update agents
+            //update child scripts (agents)
             if (GUI.changed)
                 foreach (Component script in rsmTarget.getChildScripts())
                 {

@@ -3,8 +3,10 @@ using UnityEngine;
 using Ros_CSharp;
 using System.Reflection;
 using System.Collections.Generic;
-
-
+#if UNITY_EDITOR
+using UnityEditor;
+[InitializeOnLoad]
+#endif
 public class RobotSubscriptionManager : ROSMonoBehavior
 {
     public string Robot_Count = "";
@@ -16,9 +18,40 @@ public class RobotSubscriptionManager : ROSMonoBehavior
     List<Component> childScripts = new List<Component>();
     private NodeHandle nh = null;
 
+#if UNITY_EDITOR
+    internal bool wrong_parent_warned = false;
+
+    public void CheckHierarchy(bool needToCheck = true)
+    {
+        if (getParentScripts().Count == 0 || transform.parent == null || transform.parent.gameObject.GetComponent<TfVisualizer>() == null)
+        {
+            if (!wrong_parent_warned || !needToCheck)
+            {
+                EditorUtility.DisplayDialog("Invalid hierarchy", @"This script MUST be attached to a component that is a child of TFTree.
+                    
+Example:
+TFTree
+    TFFrame (required but unrelated)
+    RobotTemplate (with this script added to it)
+        LaserView
+        OdometryView
+        (
+         AND each other thing to copy to 
+         ALL of the robots related to this
+         subcriptionmanager
+        )", "I understand");
+                wrong_parent_warned = true;
+            }
+        }
+    }
+#endif
 
     void Start()
     {
+#if UNITY_EDITOR
+        CheckHierarchy(false);
+#endif
+
         rosmanager.StartROS(this, () => {
             nh = new NodeHandle();
         });
@@ -59,7 +92,7 @@ public class RobotSubscriptionManager : ROSMonoBehavior
                 }
 
                 prefab.transform.parent = go.transform;
-                prefab.SendMessage("setNamespace", NameSpace_Prefix + num);
+                prefab.SendMessage("setNamespace", NameSpace_Prefix + num, SendMessageOptions.DontRequireReceiver);
             }
         }
 

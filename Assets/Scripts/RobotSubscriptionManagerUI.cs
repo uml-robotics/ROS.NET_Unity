@@ -7,6 +7,7 @@ using System;
 [CustomEditor(typeof(RobotSubscriptionManager))]
 public class RobotSubscriptionManagerUI : Editor
 {
+    public bool wrong_parent_warned = false;
     public override void OnInspectorGUI()
     {
         RobotSubscriptionManager rsmTarget = (RobotSubscriptionManager)target;
@@ -14,6 +15,8 @@ public class RobotSubscriptionManagerUI : Editor
         //make RobotSubscriptionManager.cs inspector only visble when not playing
         if (!Application.isPlaying)
         {
+            rsmTarget.CheckHierarchy();
+
             EditorGUILayout.HelpBox("\"Robot_Count\" can be EITHER an integer OR a parameter name", MessageType.Info);
             
             rsmTarget.Sample_Namespace = rsmTarget.NameSpace_Prefix + rsmTarget.First_Index;
@@ -21,6 +24,7 @@ public class RobotSubscriptionManagerUI : Editor
         }
         else
         {
+            rsmTarget.wrong_parent_warned = false;
             //update UI and Masters
             EditorGUILayout.Separator();
             foreach (Component script in rsmTarget.getParentScripts())

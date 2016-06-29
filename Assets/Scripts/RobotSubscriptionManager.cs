@@ -23,7 +23,7 @@ public class RobotSubscriptionManager : ROSMonoBehavior
 
     public void CheckHierarchy(bool needToCheck = true)
     {
-        if (getParentScripts().Count == 0 || transform.parent == null || transform.parent.gameObject.GetComponent<TfVisualizer>() == null)
+        if (transform.parent == null || transform.parent.gameObject.GetComponent<TfVisualizer>() == null)
         {
             if (!wrong_parent_warned || !needToCheck)
             {
@@ -51,56 +51,52 @@ TFTree
 #if UNITY_EDITOR
         CheckHierarchy(false);
 #endif
-
+        hideFlags |= HideFlags.DontSave;
         rosmanager.StartROS(this, () => {
-            nh = new NodeHandle();
+            int numRobots;
+            if (!int.TryParse(Robot_Count, out numRobots) && Robot_Count.Length != 0)
+            {
+                if (!Param.get(Robot_Count, ref numRobots))
+                {
+                    numRobots = 1;
+                    EDB.WriteLine("Failed to treat NumberOfRobots: {0} as a rosparam name. Using 1 robot as the default", Robot_Count);
+                }
+            }
+
+            for (int num = First_Index; num < First_Index + numRobots; num++)
+            {
+                GameObject go = new GameObject();
+                go.name = NameSpace_Prefix + num + " (" + GetType().Name + ")";
+                go.transform.parent = transform.root;
+                foreach (Transform prefabTF in transform)
+                {
+                    //Maybe put this outside to remove unnecessary loops
+                    foreach (Component script in prefabTF.GetComponents(typeof(MonoBehaviour)))
+                    {
+                        if (!parentScripts.Contains(script))
+                            parentScripts.Add(script);
+                    }
+
+                    GameObject prefab = Instantiate(prefabTF.gameObject);
+
+                    //add all instantiated objects scripts to child scripts
+                    foreach (Component script in prefab.GetComponents(typeof(MonoBehaviour)))
+                    {
+                        childScripts.Add(script);
+                    }
+
+                    prefab.transform.parent = go.transform;
+                    prefab.name = prefabTF.name;
+                    prefab.SendMessage("setNamespace", NameSpace_Prefix + num, SendMessageOptions.DontRequireReceiver);
+                }
+            }
+
+            //after instantiation disable old prefabs to prevent conflicts with default agents
+            foreach (Transform prefabTf in transform)
+            {
+                prefabTf.gameObject.SetActive(false);
+            }
         });
-
-
-        int numRobots;
-        if (!int.TryParse(Robot_Count, out numRobots) && Robot_Count.Length != 0)
-        {
-            if (!Param.get(Robot_Count, ref numRobots))
-            {
-                numRobots = 1;
-                EDB.WriteLine("Failed to treat NumberOfRobots: {0} as a rosparam name. Using 1 robot as the default", Robot_Count);
-            }
-        }
-
-        for (int num = First_Index; num < First_Index + numRobots; num++)
-        {
-            GameObject go = new GameObject();
-            go.name = NameSpace_Prefix + num;
-            go.transform.parent = transform.root;
-            foreach (Transform prefabTF in transform)
-            {
-                prefabTF.gameObject.hideFlags |= HideFlags.HideInHierarchy;
-
-                //Maybe put this outside to remove unnecessary loops
-                foreach (Component script in prefabTF.GetComponents(typeof(MonoBehaviour)))
-                {
-                    if (!parentScripts.Contains(script))
-                        parentScripts.Add(script);
-                }
-
-                GameObject prefab = Instantiate(prefabTF.gameObject);
-
-                //add all instantiated objects scripts to child scripts
-                foreach (Component script in prefab.GetComponents(typeof(MonoBehaviour)))
-                {
-                    childScripts.Add(script);
-                }
-
-                prefab.transform.parent = go.transform;
-                prefab.SendMessage("setNamespace", NameSpace_Prefix + num, SendMessageOptions.DontRequireReceiver);
-            }
-        }
-
-        //after instantiation disable old prefabs to prevent conflicts with default agents
-        foreach (Transform prefabTf in transform)
-        {
-            prefabTf.gameObject.SetActive(false);
-        }
     }
 
     // Update is called once per frame

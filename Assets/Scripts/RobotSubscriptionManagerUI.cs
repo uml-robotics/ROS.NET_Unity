@@ -2,11 +2,11 @@
 using UnityEngine;
 using System.Reflection;
 using UnityEditor;
-
+using System;
 
 [CustomEditor(typeof(RobotSubscriptionManager))]
-public class RobotSubscriptionManagerUI : Editor {
-
+public class RobotSubscriptionManagerUI : Editor
+{
     public override void OnInspectorGUI()
     {
         RobotSubscriptionManager rsmTarget = (RobotSubscriptionManager)target;
@@ -14,6 +14,9 @@ public class RobotSubscriptionManagerUI : Editor {
         //make RobotSubscriptionManager.cs inspector only visble when not playing
         if (!Application.isPlaying)
         {
+            EditorGUILayout.HelpBox("\"Robot_Count\" can be EITHER an integer OR a parameter name", MessageType.Info);
+            
+            rsmTarget.Sample_Namespace = rsmTarget.NameSpace_Prefix + rsmTarget.First_Index;
             base.DrawDefaultInspector();
         }
         else
@@ -27,11 +30,13 @@ public class RobotSubscriptionManagerUI : Editor {
                 {
                     if (fi.FieldType.Equals(typeof(string)))
                     {
-                        if (!(fi.Name.Equals("Topic") || fi.Name.Equals("NameSpace")))
+                        if (!(fi.Name.Equals("Topic", StringComparison.InvariantCultureIgnoreCase)))
                         {
                             string temp = EditorGUILayout.TextField(fi.Name, (string)fi.GetValue(script));
                             if (GUI.changed)
+                            {
                                 fi.SetValue(script, temp);
+                            }
                         }
                         continue;
                     }
@@ -67,6 +72,7 @@ public class RobotSubscriptionManagerUI : Editor {
 
             //update agents
             if (GUI.changed)
+            {
                 foreach (Component script in rsmTarget.getChildScripts())
                 {
                     Component parentScript = rsmTarget.getParentScripts().Find((ps) => { return ps.GetType().Equals(script.GetType()); });
@@ -77,8 +83,14 @@ public class RobotSubscriptionManagerUI : Editor {
                             fi.SetValue(script, parentFI.GetValue(parentScript));
                     }
                 }
+            }
         }
                      
     }
 }
+
+#region Editor
+
+#endregion
+
 #endif

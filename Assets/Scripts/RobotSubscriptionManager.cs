@@ -8,8 +8,8 @@ using System.Collections.Generic;
 public class RobotSubscriptionManager : ROSMonoBehavior {
 
     public string NumberOfRobots;
-    public string NameSpace = "/agent";
-    public string CountParamter = "/mrm/robots_count";
+    public string NameSpace = "";
+    public string CountParamter = "";
 
     BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
     List<Component> parentScripts = new List<Component>();

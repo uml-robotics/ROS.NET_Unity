@@ -6,7 +6,7 @@ using Messages.nav_msgs;
 public class OdometryViewController : ROSMonoBehavior {
 
     public string Topic;
-    public string NameSpace = "/agent1";
+    protected string NameSpace = "";
     public void setNamespace(string _NameSpace)
     {
         NameSpace = _NameSpace;

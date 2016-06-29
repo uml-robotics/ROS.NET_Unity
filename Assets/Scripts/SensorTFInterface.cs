@@ -14,7 +14,7 @@ public class SensorTFInterface <M> : ROSMonoBehavior where M : IRosMessage, new(
     private static object vislock = new object();
     public String Topic; //the topic the base and child class will be subscribing too
                          //also the topic that the TF will be associated with
-    public string NameSpace = "/agent1";
+    protected string NameSpace = "";
     public void setNamespace(string _NameSpace)
     {
         NameSpace = _NameSpace;

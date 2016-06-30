@@ -9,10 +9,8 @@ public class OdometryViewController : SensorTFInterface<Odometry> {
     public double AngleTolerance = 0.1d; //Angular distance from the last arrow
     public int Keep = 100; //number of arrows to keep
     public float ArrowLength = 0.4f; //length of arrow
+    public Color Color = new Color(1, 0, 0, 1);
     private float oldArrowLength;
-
-    private NodeHandle nh = null;
-    private Subscriber<Odometry> subscriber;
 
     private Odometry currentMsg = new Odometry(); //Odometry must be initialized since a null can not be locked
     private Vector3 currentPos;
@@ -23,30 +21,27 @@ public class OdometryViewController : SensorTFInterface<Odometry> {
     private Queue<GameObject> Arrows = new Queue<GameObject>();
     private GameObject arrowGO; //arrow gameobject used to represent orientation of object
 
-    private void callBack(Odometry msg)
+    protected override void Callback(Odometry scan)
     {
         lock(currentMsg)
         {
-            currentMsg = msg;
-            currentPos = RosPointToVector3(msg.pose.pose.position);
-            currentQuat = RosToUnityQuat(msg.pose.pose.orientation);
+            currentMsg = scan;
+            currentPos = RosPointToVector3( scan.pose.pose.position);
+            currentQuat = RosToUnityQuat(scan.pose.pose.orientation);
         }
     }
 
     // Use this for initialization
-   new void Start () {
+    protected override void Start () {
+        base.Start();
         oldArrowLength = ArrowLength;
-        rosmanager.StartROS(this, () => {
-            nh = new NodeHandle();
-            subscriber = nh.subscribe<Odometry>(NameSpace + _Topic, 1, callBack);
-        });
-
         arrowGO = transform.GetChild(0).gameObject;
         arrowGO.SetActive(false);
     }
 
     // Update is called once per frame
-  new void Update() {
+   protected override void Update() {
+        //base.Update() Odometry does not need it's transform handled
         while (Arrows.Count > Keep)
         {
             Destroy(Arrows.Dequeue());
@@ -74,7 +69,6 @@ public class OdometryViewController : SensorTFInterface<Odometry> {
             }
 
             //TODO make Angle tolerance better reflect Rviz. UPDATE Rviz has some weird ass voodoo scalling for their angle tolerance
-            //TODO update all arrows when size changes
             if ( (currentPos - lastPos).magnitude > (PositionTolerance) || (Mathf.Pow(Mathf.DeltaAngle(currentQuat.eulerAngles.y, lastQuat.eulerAngles.y), 2)/14400 > AngleTolerance ))
             {
                 GameObject arrow = Instantiate(arrowGO);
@@ -83,6 +77,13 @@ public class OdometryViewController : SensorTFInterface<Odometry> {
                 arrow.SetActive(true);
                 arrow.transform.localScale = new Vector3(ArrowLength, ArrowLength, ArrowLength);
                 arrow.hideFlags |= HideFlags.HideInHierarchy;
+                
+                foreach(MeshRenderer mesh in arrow.GetComponentsInChildren<MeshRenderer>())
+                {
+
+                    mesh.material.color = Color;
+                }
+
                 Arrows.Enqueue(arrow);
                 lastPos = currentPos;
                 lastQuat = currentQuat;

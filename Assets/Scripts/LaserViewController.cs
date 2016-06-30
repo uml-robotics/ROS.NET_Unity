@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections;
 using Messages.sensor_msgs;
 using Ros_CSharp;
 using System;
@@ -7,9 +8,6 @@ using System.Linq;
 
 public class LaserViewController : SensorTFInterface<LaserScan>
 {
-    //Ros stuff
-    private NodeHandle nh = null;
-    private Subscriber<LaserScan> subscriber;
 
     //various collections 
     SortedList<DateTime, LaserScan> toDraw = new SortedList<DateTime, LaserScan>();
@@ -21,26 +19,14 @@ public class LaserViewController : SensorTFInterface<LaserScan>
 
     public float PointSize = 0.1f;
     public float DecayTime = 0f;
+    public Color Color = new Color(1, 0, 0, 1);
     //curently not in use
     //private uint maxRecycle = 100;
 
-    new void Start()
-    {
-        base.Start();// must call base classes start function for it to find the propper TF for the sensor
+    //construtor for setting MakeChildOfTF to true or false
+    public LaserViewController() : base(false) {}
 
-        rosmanager.StartROS(this,() => {
-            nh = new NodeHandle();
-            subscriber = nh.subscribe<LaserScan>(NameSpace + _Topic, 1, scancb);
-        });
-
-        points = transform.GetChild(0).gameObject;
-        points.hideFlags |= HideFlags.HideAndDontSave;
-        points.SetActive(false);
-        points.name = "Points";
-       
-    }
-
-    private void scancb(LaserScan argument)
+    protected override void Callback(LaserScan argument)
     {
 
         if(lastStamp != null && ROS.GetTime(argument.header.stamp) < ROS.GetTime(lastStamp)) 
@@ -57,10 +43,21 @@ public class LaserViewController : SensorTFInterface<LaserScan>
     }
 
 
+    protected override void Start()
+    {
+        base.Start();// must call base classes start function for it to find the propper TF for the sensor
+        points = transform.GetChild(0).gameObject;
+        points.hideFlags |= HideFlags.HideAndDontSave;
+        points.SetActive(false);
+        points.name = "Points";
+
+    }
+
     // Update is called once per frame
-     new void Update()
+    protected override void Update()
     {
         base.Update();
+
         if (DecayTime < 0.0001f)
         {
 
@@ -81,6 +78,7 @@ public class LaserViewController : SensorTFInterface<LaserScan>
 
         lock(toDraw)
         {
+
             while (toDraw.Count() > 0)
             {
                 GameObject newone = null;

@@ -22,6 +22,7 @@ public class OrbitRotator : MonoBehaviour
     public bool autoZeroVerticalOnMobile = true;
     public bool autoZeroHorizontalOnMobile = false;
     public bool relative = false;
+    private bool ignoreEvents;
     public Component Pivot;
     public Component Mast;
         
@@ -48,9 +49,13 @@ public class OrbitRotator : MonoBehaviour
         m_OriginalOrbitRotation =  transform.localRotation;
     }
 
-
+    void OnApplicationFocus(bool focusStatus)
+    {
+        ignoreEvents = !focusStatus;
+    }
     private void Update()
     {
+        if (ignoreEvents) return;
         HandlePivot();
         HandleZoom();
         HandleTranslate();

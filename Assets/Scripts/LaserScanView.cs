@@ -28,6 +28,11 @@ public class LaserScanView : MonoBehaviour
         get { return goParent == null ? 0.1f : goParent.gameObject.GetComponent<LaserViewController>().PointSize; }
     }
 
+    private Color Color
+    {
+        get { return goParent == null ? new Color(1, 0, 0, 1) : goParent.gameObject.GetComponent<LaserViewController>().Color; }
+    }
+
     public delegate void RecycleCallback(GameObject me);
     public event RecycleCallback Recylce;
 
@@ -167,12 +172,13 @@ public class LaserScanView : MonoBehaviour
                     {
                         continue;
                     }
-                    pointBuffer[i].transform.localScale = new Vector3(pointSize, pointSize, pointSize);
-                    Vector3 parentPos = TF.position;
+                pointBuffer[i].transform.localScale = new Vector3(pointSize, pointSize, pointSize);
+                Vector3 parentPos = TF.position;
                 emQuaternion rot = new emQuaternion(0, 0, 0, 1);
                 emVector3 pos = new emVector3((float)(distBuffer[i] * Math.Cos(angMin + angInc * i)), (float)(distBuffer[i] * Math.Sin(angMin + angInc * i)), 0f);
                 pointBuffer[i].transform.localPosition = pos.UnityPosition;
                 pointBuffer[i].transform.localRotation = rot.UnityRotation;
+                pointBuffer[i].GetComponent<MeshRenderer>().material.color = Color;
                 pointBuffer[i].SetActive(true);
             }
             //save position, reset pos of scan views to be their old pose until updates finish

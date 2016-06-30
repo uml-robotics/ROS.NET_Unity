@@ -96,13 +96,12 @@ public class OdometryViewController : SensorTFInterface<Odometry> {
     
     Quaternion RosToUnityQuat(Messages.geometry_msgs.Quaternion Ros_Quat)
     {
-        return new Quaternion((float)Ros_Quat.y, -(float)Ros_Quat.z, (float)Ros_Quat.x, (float)Ros_Quat.w); //tempfix: swapping y and x seemed to fix orientation issues
+        return new tf.net.emQuaternion(Ros_Quat).UnityRotation;
     }
 
     Vector3 RosPointToVector3(Messages.geometry_msgs.Point ROS_Point)
     {
-        //return new UnityEngine.Vector3((float)ROS_Point.x, (float)ROS_Point.z, (float)ROS_Point.y);
-        return new Vector3(-(float)ROS_Point.y, (float)ROS_Point.z, (float)ROS_Point.x); //tempfix: y and x appear to be swapped in message or orientation in scene is off?
+        return new tf.net.emVector3(ROS_Point.x, ROS_Point.y, ROS_Point.z).UnityPosition;
     }
 
     void OnDisable()

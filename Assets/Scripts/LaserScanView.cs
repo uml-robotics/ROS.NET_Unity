@@ -123,7 +123,7 @@ public class LaserScanView : MonoBehaviour
             if (changed)
             {
                 //show if hidden (this scan was recycled)
-                hideFlags &= ~HideFlags.HideAndDontSave;
+                //hideFlags &= ~HideFlags.HideAndDontSave;
 
                 #region RESIZE IF NEEDED, ADD+REMOVE SPHERES AS NEEDED
                 //resize sphere array if different from distbuffer

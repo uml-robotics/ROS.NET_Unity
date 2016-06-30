@@ -47,7 +47,7 @@ public class LaserViewController : SensorTFInterface<LaserScan>
     {
         base.Start();// must call base classes start function for it to find the propper TF for the sensor
         points = transform.GetChild(0).gameObject;
-        points.hideFlags |= HideFlags.HideAndDontSave;
+        points.hideFlags |= HideFlags.HideInHierarchy;
         points.SetActive(false);
         points.name = "Points";
 
@@ -159,5 +159,21 @@ public class LaserViewController : SensorTFInterface<LaserScan>
 
     #endregion
 
+    
+    void OnDisable()
+    {
+        while(active.Count > 0)
+        {
+            if(active[0] != null)
+            {
+                active[0].GetComponent<LaserScanView>().expire();
+            }else
+            {
+                active.RemoveAt(0);
+            }
+             
+        }
+    }
+    
   
 }

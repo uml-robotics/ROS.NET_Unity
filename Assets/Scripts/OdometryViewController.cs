@@ -41,55 +41,57 @@ public class OdometryViewController : SensorTFInterface<Odometry> {
 
     // Update is called once per frame
    protected override void Update() {
-        //base.Update() Odometry does not need it's transform handled
-        while (Arrows.Count > Keep)
+        lock(Arrows)
         {
-            Destroy(Arrows.Dequeue());
-        }
-
-        if(oldArrowLength != ArrowLength)
-        {
-            foreach(GameObject arrow in Arrows)
+            //base.Update() Odometry does not need it's transform handled
+            while (Arrows.Count > Keep)
             {
-                arrow.transform.localScale = new Vector3(ArrowLength, ArrowLength, ArrowLength);
-            }
-        }
-
-        lock (currentMsg)
-        {
-           
-            if (currentMsg.pose == null)
-                return;
-
-            if (lastPos == null || lastQuat == null)
-            {
-                lastQuat = currentQuat;
-                lastPos = currentPos;
-                return;
+                Destroy(Arrows.Dequeue());
             }
 
-            //TODO make Angle tolerance better reflect Rviz. UPDATE Rviz has some weird ass voodoo scalling for their angle tolerance
-            if ( (currentPos - lastPos).magnitude > (PositionTolerance) || (Mathf.Pow(Mathf.DeltaAngle(currentQuat.eulerAngles.y, lastQuat.eulerAngles.y), 2)/14400 > AngleTolerance ))
+            if (oldArrowLength != ArrowLength)
             {
-                GameObject arrow = Instantiate(arrowGO);
-                arrow.transform.rotation = (currentQuat * Quaternion.Euler(90, 0, 0));
-                arrow.transform.position = arrow.transform.TransformVector(new Vector3(0f, ArrowLength, 0f)) + currentPos;
-                arrow.SetActive(true);
-                arrow.transform.localScale = new Vector3(ArrowLength, ArrowLength, ArrowLength);
-                arrow.hideFlags |= HideFlags.HideInHierarchy;
-                
-                foreach(MeshRenderer mesh in arrow.GetComponentsInChildren<MeshRenderer>())
+                foreach (GameObject arrow in Arrows)
                 {
+                    arrow.transform.localScale = new Vector3(ArrowLength, ArrowLength, ArrowLength);
+                }
+            }
 
-                    mesh.material.color = Color;
+            lock (currentMsg)
+            {
+
+                if (currentMsg.pose == null)
+                    return;
+
+                if (lastPos == null || lastQuat == null)
+                {
+                    lastQuat = currentQuat;
+                    lastPos = currentPos;
+                    return;
                 }
 
-                Arrows.Enqueue(arrow);
-                lastPos = currentPos;
-                lastQuat = currentQuat;
+                //TODO make Angle tolerance better reflect Rviz. UPDATE Rviz has some weird ass voodoo scalling for their angle tolerance
+                if ((currentPos - lastPos).magnitude > (PositionTolerance) || (Mathf.Pow(Mathf.DeltaAngle(currentQuat.eulerAngles.y, lastQuat.eulerAngles.y), 2) / 14400 > AngleTolerance))
+                {
+                    GameObject arrow = Instantiate(arrowGO);
+                    arrow.transform.rotation = (currentQuat * Quaternion.Euler(90, 0, 0));
+                    arrow.transform.position = arrow.transform.TransformVector(new Vector3(0f, ArrowLength, 0f)) + currentPos;
+                    arrow.SetActive(true);
+                    arrow.transform.localScale = new Vector3(ArrowLength, ArrowLength, ArrowLength);
+                    arrow.hideFlags |= HideFlags.HideInHierarchy;
+
+                    foreach (MeshRenderer mesh in arrow.GetComponentsInChildren<MeshRenderer>())
+                    {
+
+                        mesh.material.color = Color;
+                    }
+
+                    Arrows.Enqueue(arrow);
+                    lastPos = currentPos;
+                    lastQuat = currentQuat;
+                }
             }
         }
-        
     }
     
     Quaternion RosToUnityQuat(Messages.geometry_msgs.Quaternion Ros_Quat)
@@ -101,5 +103,22 @@ public class OdometryViewController : SensorTFInterface<Odometry> {
     {
         //return new UnityEngine.Vector3((float)ROS_Point.x, (float)ROS_Point.z, (float)ROS_Point.y);
         return new Vector3(-(float)ROS_Point.y, (float)ROS_Point.z, (float)ROS_Point.x); //tempfix: y and x appear to be swapped in message or orientation in scene is off?
+    }
+
+    void OnDisable()
+    {
+        lock (Arrows)
+        while (Arrows.Count > 0)
+        {
+            if (Arrows.Peek() != null)
+            {
+                Destroy(Arrows.Dequeue());
+            }
+            else
+            {
+                Arrows.Dequeue();
+            }
+
+        }
     }
 }

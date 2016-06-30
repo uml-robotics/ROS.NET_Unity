@@ -6,13 +6,11 @@ using Ros_CSharp;
 
 public class PathViewController : SensorTFInterface<Path> {
 
-    private NodeHandle nh = null;
-    private Subscriber<Path> subscriber = null;
     private Path currentMsg = new Path();
     private List<GameObject> path = new List<GameObject>();
     private int pointCount{ get { return currentMsg.poses == null ? 0 : currentMsg.poses.Length;} }
 
-    void callBackm(Path msg)
+    protected override void Callback(Path msg)
     {
         lock(currentMsg)
         {
@@ -20,21 +18,17 @@ public class PathViewController : SensorTFInterface<Path> {
             //Debug.Log("Array Size: " + msg.poses.Length.ToString());
         }   
     }
+    //TODO look for another way to make line or recyle points
+    //Add color
+    //clean up
 
-	// Use this for initialization
-	new void Start () {
+    // Use this for initialization
+    protected override void Start () {
         base.Start();
-
-
-        rosmanager.StartROS(this, () => {
-            nh = new NodeHandle();
-            subscriber = nh.subscribe<Path>(NameSpace + Topic, 1, callBackm);
-        });
     }
 	
 	// Update is called once per frame
-	new void Update () {
-        base.Update();
+	protected override void Update () {
         lock (currentMsg)
         {
 

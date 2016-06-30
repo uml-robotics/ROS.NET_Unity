@@ -50,7 +50,8 @@ public class PathViewController : SensorTFInterface<Path> {
                 for (int index = 0; index < pointCount; ++index)
                 {
                     path[index].transform.localScale = new Vector3(pointSize, pointSize, pointSize);
-                    path[index].transform.position = new Vector3((float)-currentMsg.poses[index].pose.position.y, (float)currentMsg.poses[index].pose.position.z, (float)currentMsg.poses[index].pose.position.x) + Offset;
+                    tf.net.emVector3 pos = new tf.net.emVector3((float)currentMsg.poses[index].pose.position.x, currentMsg.poses[index].pose.position.y, currentMsg.poses[index].pose.position.z);
+                    path[index].transform.position = pos.UnityPosition + Offset;
                     path[index].GetComponent<MeshRenderer>().material.color = Color;
                 }
             }

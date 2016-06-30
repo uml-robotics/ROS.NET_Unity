@@ -11,6 +11,7 @@ public class PathViewController : SensorTFInterface<Path> {
     private List<GameObject> path = new List<GameObject>();
     private int pointCount{ get { return currentMsg.poses == null ? 0 : currentMsg.poses.Length;} }
     private const float pointSize = 0.05f;
+    public Vector3 Offset = new Vector3(0, 0, 0);
     public Color Color = new Color(0, 0, 1, 1);
 
     protected override void Callback(Path msg)
@@ -49,7 +50,7 @@ public class PathViewController : SensorTFInterface<Path> {
                 for (int index = 0; index < pointCount; ++index)
                 {
                     path[index].transform.localScale = new Vector3(pointSize, pointSize, pointSize);
-                    path[index].transform.position = new Vector3((float)-currentMsg.poses[index].pose.position.y, (float)currentMsg.poses[index].pose.position.z, (float)currentMsg.poses[index].pose.position.x);
+                    path[index].transform.position = new Vector3((float)-currentMsg.poses[index].pose.position.y, (float)currentMsg.poses[index].pose.position.z, (float)currentMsg.poses[index].pose.position.x) + Offset;
                     path[index].GetComponent<MeshRenderer>().material.color = Color;
                 }
             }

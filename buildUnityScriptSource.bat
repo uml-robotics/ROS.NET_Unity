@@ -17,7 +17,6 @@ xcopy /E /I /Y /Q .ros.net\tf.net COPY_TO_UNITY_PROJECT\tf.net\
 xcopy /E /I /Y /Q .ros.net\XmlRpc_Wrapper COPY_TO_UNITY_PROJECT\XmlRpc_Wrapper
 xcopy /E /I /Y /Q .ros.net\MeshLib COPY_TO_UNITY_PROJECT\MeshLib\
 xcopy /E /I /Y /Q Messages COPY_TO_UNITY_PROJECT\Messages\
-%~dp0\CopyMeshes.bat
 
 REM cleanup DLLs to avoid duplicate definitions on windows (or other issues on different unity platforms and/or targets)
 IF EXIST COPY_TO_UNITY_PROJECT\Messages\Messages.dll del COPY_TO_UNITY_PROJECT\Messages\Messages.dll
@@ -26,6 +25,8 @@ for /D %%D in (COPY_TO_UNITY_PROJECT\*) do (
 	IF EXIST %%D\obj rmdir /Q /S %%D\obj
 	IF EXIST %%D\properties rmdir /Q /S %%D\Properties
 )
+
+%~dp0\CopyMeshes.bat
 
 goto :eof
 :Fail

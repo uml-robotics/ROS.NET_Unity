@@ -1,5 +1,5 @@
 @echo off
-WHEREAMI=
+WHEREAMI=%~dp0
 for /D %%A in (C:\Windows\Microsoft.NET\Framework*) do IF EXIST %%A\v4* for /f "tokens=*" %%B in ('dir /b /a:d %%A') do set TOOLSPATH=%%A\%%B
 if NOT DEFINED TOOLSPATH goto :Fail
 if NOT EXIST %TOOLSPATH%\msbuild.exe goto :Fail
@@ -15,7 +15,10 @@ REM copy required source directories (including generated messages)
 xcopy /E /I /Y /Q .ros.net\ROS_Comm COPY_TO_UNITY_PROJECT\ROS_Comm\
 xcopy /E /I /Y /Q .ros.net\tf.net COPY_TO_UNITY_PROJECT\tf.net\
 xcopy /E /I /Y /Q .ros.net\XmlRpc_Wrapper COPY_TO_UNITY_PROJECT\XmlRpc_Wrapper
+xcopy /E /I /Y /Q .ros.net\MeshLib COPY_TO_UNITY_PROJECT\MeshLib\
 xcopy /E /I /Y /Q Messages COPY_TO_UNITY_PROJECT\Messages\
+cd %WHEREAMI%
+CopyMeshes.bat
 
 REM cleanup DLLs to avoid duplicate definitions on windows (or other issues on different unity platforms and/or targets)
 IF EXIST COPY_TO_UNITY_PROJECT\Messages\Messages.dll del COPY_TO_UNITY_PROJECT\Messages\Messages.dll

@@ -10,7 +10,7 @@ mkdir COPY_TO_UNITY_PROJECT
 for %%C in (*.dll) do xcopy /I /Y /Q %%C COPY_TO_UNITY_PROJECT\
 for %%C in (*.pdb) do xcopy /I /Y /Q %%C COPY_TO_UNITY_PROJECT\
 del /Q COPY_TO_UNITY_PROJECT\UnityOutputHack*
-
+CopyMeshes.bat
 goto :eof
 :Fail
 echo "Could not locate msbuild! This build script should work with .NET build tools version >v4.0.*"

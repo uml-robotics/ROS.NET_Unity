@@ -1,6 +1,6 @@
 @echo off
 set DEST=%~dp0
-set DEST=%DEST%COPY_TO_UNITY_PROJECT
+set DEST=%DEST%COPY_TO_UNITY_PROJECT\Resources
 goto :findBabies
 goto :eof
 :findBabies

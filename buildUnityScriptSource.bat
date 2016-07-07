@@ -25,7 +25,7 @@ for /D %%D in (COPY_TO_UNITY_PROJECT\*) do (
 	IF EXIST %%D\obj rmdir /Q /S %%D\obj
 	IF EXIST %%D\properties rmdir /Q /S %%D\Properties
 )
-
+mkdir Resources
 %~dp0\CopyMeshes.bat
 
 goto :eof

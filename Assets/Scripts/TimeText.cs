@@ -35,7 +35,6 @@ public class TimeText : MonoBehaviour
         if (timetext != null)
         {
             timetext.text = DateTime.Now.Subtract(startTime).ToString();
-            ROS.Info(timetext.text);
         }
     }
 }

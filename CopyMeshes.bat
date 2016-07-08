@@ -1,24 +1,36 @@
 @echo off
-set DEST=%~dp0
-set DEST=%DEST%COPY_TO_UNITY_PROJECT\Resources
-goto :findBabies
+set BASE=%~dp0
+set DEST=%BASE%COPY_TO_UNITY_PROJECT\Resources
+goto :start
 goto :eof
 :findBabies
-for /D %%F in (*meshes) do for %%E in (%%~dpF) do ( 
-set src=%%E
+REM echo IN %cd%
+if EXIST meshes for /D %%F in (*meshes) do (
+if "%%F" == "meshes" (
+for %%f in (%cd%) do set myfolder=%%~nxf
+echo xcopy /E /I /Y /Q %cd% %DEST%\%myfolder%
+xcopy /E /I /Y /Q %cd% %DEST%\%myfolder%
+)
+if not "%%F" == "meshes" (
+set src=%%~dpF
 set MYDIR1=%src:~0,-1%
 for %%f in (%MYDIR1%) do set myfolder=%%~nxf
-if not "%myfolder%" == "-1" (
-echo xcopy /E /I /Y /Q "%MYDIR1%" "%DEST%\%myfolder%"
-xcopy /E /I /Y /Q "%MYDIR1%" "%DEST%\%myfolder%"
+echo xcopy /E /I /Y /Q %MYDIR1% %DEST%\%myfolder%
+xcopy /E /I /Y /Q %MYDIR1% %DEST%\%myfolder%
 )
 )
-for /D %%A in (*) do ( 
- (Echo "%%A" | FIND /I "COPY_TO_UNITY_PROJECT" 1>NUL) || (
- pushd %%A
- call :findBabies
- popd
- )
+:start
+for /D %%A in (*) do (
+(Echo "%%A" | FIND /I "COPY_TO_UNITY_PROJECT" 1>NUL) || (
+pushd %%A
+call :findBabies
+popd
 )
+)
+goto :eof
+:error
+echo %cd%
+echo SOMETHING AIN'T RIGHT
+exit 1
 :eof
 exit /b

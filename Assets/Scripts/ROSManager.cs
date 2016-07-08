@@ -22,13 +22,33 @@ public class ROSMonoBehavior : MonoBehaviour
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.playmodeStateChanged = () =>
         {
+            string state = "";
+            if (EditorApplication.isPlaying)
+                state += "playing";
+            if (EditorApplication.isPaused)
+                state += " paused";
+            if (EditorApplication.isCompiling)
+                state += " compiling";
+            state = state.Trim(' ');
+            Debug.LogWarning("PlayMode == " + state);
             if (!EditorApplication.isPlaying && !EditorApplication.isPaused)
             {
+                ROS.Unfreeze();
                 if (ROS.ok || ROS.isStarted())
                     ROSManager.StopROS();
             }
             else if (EditorApplication.isPlaying)
-                rosmanager.StartROS(null, null);
+            {
+                if (!EditorApplication.isPaused)
+                {
+                    ROS.Unfreeze();
+                    rosmanager.StartROS(null, null);
+                }
+                else
+                {
+                    ROS.Freeze();
+                }
+            }
         };
 #endif
     }
@@ -54,7 +74,7 @@ public class ROSManager
             Action whatToDo = () =>
             {
 #if UNITY_EDITOR
-                if (EditorApplication.isPlaying)
+                if (EditorApplication.isPlaying && !EditorApplication.isPaused)
                 {
 #endif
                     if (!ROS.isStarted())
@@ -82,7 +102,7 @@ public class ROSManager
                 }
             }
         }
-        else if (!ROS.isStarted())
+        else if (EditorApplication.isPlaying && !EditorApplication.isPaused && !ROS.isStarted())
         {
             ROS.Init(new string[0], "unity_test_" + DateTime.Now.Ticks);
             XmlRpcUtil.SetLogLevel(XmlRpcUtil.XMLRPC_LOG_LEVEL.ERROR);

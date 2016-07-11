@@ -248,7 +248,7 @@ public class LoadMesh : ROSMonoBehavior {
                                         go.transform.localRotation *= Quaternion.Euler(0, 0, 90);
                                     }
                                     */
-                                    go.transform.localRotation *= Quaternion.Euler(-90, 0, 90);
+                                    go.transform.localRotation = Quaternion.Euler(new Vector3(-90, 90, 0) + go.transform.localEulerAngles);
                                     GameObject goParent = new GameObject();
                                     goParent.transform.parent = transform;
                                     goParent.name = link.Attribute("name").Value;
@@ -264,7 +264,8 @@ public class LoadMesh : ROSMonoBehavior {
                                             Destroy(tf.gameObject);
                                             continue;
                                         }
-                                        tf.localRotation = Quaternion.Euler(-90, 0, 90);
+                                        //tf.localRotation = Quaternion.Euler(-90, 0, 90);
+                                        tf.transform.localRotation = Quaternion.Euler(new Vector3(0, 90, 0) + go.transform.localEulerAngles + tf.transform.localEulerAngles);
                                     }
                                     go.name = link.Attribute("name").Value;
                                     go.transform.parent = transform;

@@ -141,19 +141,22 @@ public class LoadMesh : ROSMonoBehavior {
     {
         string colorName = material.Attribute("name").Value;
         XElement color = material.Element("color");
-        string colorVal = color.Attribute("rgba").Value;
-        string[] colorValSplit = colorVal.Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
-        float[] rbga = new float[colorValSplit.Length];
-
-        for(int index = 0; index < colorValSplit.Length; ++index)
+        if (color != null)
         {
-            if(!float.TryParse(colorValSplit[index], out rbga[index]))
+            string colorVal = color.Attribute("rgba").Value;
+            string[] colorValSplit = colorVal.Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
+            float[] rbga = new float[colorValSplit.Length];
+
+            for (int index = 0; index < colorValSplit.Length; ++index)
             {
-                rbga[index] = 0;
+                if (!float.TryParse(colorValSplit[index], out rbga[index]))
+                {
+                    rbga[index] = 0;
+                }
             }
+
+            materials.Add(colorName, rbga);
         }
-        
-        materials.Add(colorName, rbga);
         return true;
     }
     
@@ -220,29 +223,53 @@ public class LoadMesh : ROSMonoBehavior {
                         if (path.EndsWith(".DAE"))
                             path = path.Substring(0, path.LastIndexOf("."));
 
-
-                        //if (!File.Exists(path))
-                        //   Debug.LogError(path + " is missing or some shit");
                         try {
                             UnityEngine.Object foundMesh = Resources.Load(path) as GameObject;
                             if (foundMesh != null)
                             {
                                 GameObject go = Instantiate(foundMesh as GameObject);
-                                go.transform.parent = transform;
+                                // = new GameObject();
+                                //goParent.transform.parent = transform;
+                                //goParent.name = link.Attribute("name").Value;
+                                //go.transform.parent = goParent.transform;
 
                                 if (link.Attribute("name").Value == "right_lower_forearm")
                                     Debug.Log("thin");
 
-                                foreach (Transform tf in go.transform)
+                                if (go.transform.childCount == 0)
                                 {
-                                    if (tf.localEulerAngles.x == 90)
-                                        tf.rotation *= Quaternion.Euler(180, 0, 0);
-
-                                    tf.localRotation *= Quaternion.Euler(new Vector3(0, 0, 90) + go.transform.localRotation.eulerAngles);
-                                    if (tf.gameObject.GetComponent<MeshRenderer>() != null && color != null)
-                                        tf.gameObject.GetComponent<MeshRenderer>().material.color = color.Value;
+                                    /*
+                                    if (go.transform.localEulerAngles.x != 270)
+                                    {
+                                        go.transform.localRotation *= Quaternion.Euler(-90, 0, 90);
+                                    }
+                                    else
+                                    {
+                                        go.transform.localRotation *= Quaternion.Euler(0, 0, 90);
+                                    }
+                                    */
+                                    go.transform.localRotation *= Quaternion.Euler(-90, 0, 90);
+                                    GameObject goParent = new GameObject();
+                                    goParent.transform.parent = transform;
+                                    goParent.name = link.Attribute("name").Value;
+                                    go.transform.parent = goParent.transform;
                                 }
-                                go.name = link.Attribute("name").Value;
+                                else
+                                {
+
+                                    foreach (Transform tf in go.transform)
+                                    {
+                                        if (tf.name == "Lamp" || tf.name == "Camera")
+                                        {
+                                            Destroy(tf.gameObject);
+                                            continue;
+                                        }
+                                        tf.localRotation = Quaternion.Euler(-90, 0, 90);
+                                    }
+                                    go.name = link.Attribute("name").Value;
+                                    go.transform.parent = transform;
+
+                                }
                             }
                         }
                         catch(Exception e)

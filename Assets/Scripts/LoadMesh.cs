@@ -10,7 +10,7 @@ public class LoadMesh : ROSMonoBehavior {
 
     public string RobotDescriptionParam = "";
     private string robotdescription;
-    private Dictionary<string, float[]> materials = new Dictionary<string, float[]>();
+    private Dictionary<string, Color?> materials = new Dictionary<string, Color?>();
     public XDocument RobotDescription { get; private set; }
     //private Dictionary<string, joint> joints = new Dictionary<string, joint>();
    // private Dictionary<string, link> links = new Dictionary<string, link>();
@@ -137,15 +137,21 @@ public class LoadMesh : ROSMonoBehavior {
         return true;
     }
     
-    bool handleMaterial(XElement material)
+    Color? handleMaterial(XElement material)
     {
         string colorName = material.Attribute("name").Value;
+        Color? colorOut = null;
+
+        if (materials.ContainsKey(colorName))
+            return materials[colorName];
+
         XElement color = material.Element("color");
         if (color != null)
         {
             string colorVal = color.Attribute("rgba").Value;
             string[] colorValSplit = colorVal.Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
             float[] rbga = new float[colorValSplit.Length];
+           
 
             for (int index = 0; index < colorValSplit.Length; ++index)
             {
@@ -154,12 +160,25 @@ public class LoadMesh : ROSMonoBehavior {
                     rbga[index] = 0;
                 }
             }
+            if (rbga != null)
+            {
+                if (rbga.Length == 3)
+                {
+                    colorOut = new Color(rbga[0], rbga[1], rbga[2]);
+                    materials.Add(colorName, colorOut);
+                }
 
-            materials.Add(colorName, rbga);
+                if (rbga.Length == 4)
+                {
+                    colorOut = new Color(rbga[0], rbga[1], rbga[2], rbga[3]);
+                    materials.Add(colorName, colorOut);
+                }
+            }
         }
-        return true;
+        return colorOut;
     }
     
+    //not being used at the moment, may be necessary for make more generic code
     bool handleJoint(XElement joint)
     {
         XElement origin = joint.Element("origin");
@@ -177,6 +196,9 @@ public class LoadMesh : ROSMonoBehavior {
 
     bool handleLink(XElement link)
     {
+        if (link.Attribute("name").Value == "left_gripper")
+            Debug.Log("thing");
+
         XElement visual;
         //get pose outside of visual for gazebo
         XElement pose = link.Element("pose");
@@ -186,25 +208,50 @@ public class LoadMesh : ROSMonoBehavior {
             XElement geometry = visual.Element("geometry");
             XElement material = visual.Element("material");
             string xyz = origin == null ? pose == null ? null : pose.Value : origin.Attribute("xyz").Value;
-            string materialName = material == null ? null : material.Attribute("name") == null ? null : material.Attribute("name").Value;
-            if ( geometry != null) 
+            //string materialName = material == null ? null : material.Attribute("name") == null ? null : material.Attribute("name").Value;
+
+
+            //hackey shit
+            float[] rpy_rot = null;
+            string localRot = visual.Element("origin") == null ? null : visual.Element("origin").Attribute("rpy") == null ? null : visual.Element("origin").Attribute("rpy").Value;
+            if (localRot != null)
             {
-
-                Color? color = null;
-                if(materialName != null)
+                string[] poses = localRot.Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
+                rpy_rot = new float[poses.Length];
+                for (int index = 0; index < poses.Length; ++index)
                 {
-                    float[] materialVal;
-                    materials.TryGetValue(materialName, out materialVal);
-                    if (materialVal != null) 
+                    if (!float.TryParse(poses[index], out rpy_rot[index]))
                     {
-                        if (materialVal.Length == 3)
-                            color = new Color(materialVal[0], materialVal[1], materialVal[2]);
-
-                        if (materialVal.Length == 4)
-                            color = new Color(materialVal[0], materialVal[1], materialVal[2], materialVal[3]);
+                        rpy_rot[index] = 0;
                     }
                 }
-                
+            }
+
+            float[] xyz_pos = null;
+            string localPos = visual.Element("origin") == null ? null : visual.Element("origin").Attribute("xyz") == null ? null : visual.Element("origin").Attribute("xyz").Value;
+            if (localPos != null)
+            {
+                string[] poses = localPos.Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
+                xyz_pos = new float[poses.Length];
+                for (int index = 0; index < poses.Length; ++index)
+                {
+                    if (!float.TryParse(poses[index], out xyz_pos[index]))
+                    {
+                        xyz_pos[index] = 0;
+                    }
+                }
+            }
+            //hackey shit
+
+
+            Color? color = null;
+            if(material != null)
+            {
+                color = handleMaterial(material);
+            }
+
+            if ( geometry != null) 
+            {
                 //handle mesh
                 XElement mesh;
                 if ((mesh = geometry.Element("mesh")) != null)
@@ -233,7 +280,7 @@ public class LoadMesh : ROSMonoBehavior {
                                 //goParent.name = link.Attribute("name").Value;
                                 //go.transform.parent = goParent.transform;
 
-                                if (link.Attribute("name").Value == "right_lower_forearm")
+                                if (link.Attribute("name").Value == "pedestal")
                                     Debug.Log("thin");
 
                                 if (go.transform.childCount == 0)
@@ -248,11 +295,25 @@ public class LoadMesh : ROSMonoBehavior {
                                         go.transform.localRotation *= Quaternion.Euler(0, 0, 90);
                                     }
                                     */
-                                    go.transform.localRotation = Quaternion.Euler(new Vector3(-90, 90, 0) + go.transform.localEulerAngles);
+                                    //go.transform.localRotation = Quaternion.Euler(new Vector3(0, 90, 0) + go.transform.localEulerAngles);
+
+                                    if (xyz_pos != null)
+                                        go.transform.localPosition +=  new Vector3(xyz_pos[0], xyz_pos[1] , xyz_pos[2] );
+
+                                    if (rpy_rot == null)
+                                        go.transform.localRotation = Quaternion.Euler(new Vector3(0, 90, 0) + go.transform.localEulerAngles);
+                                    else
+                                        go.transform.localRotation = Quaternion.Euler(new Vector3(0, 90, 0) + go.transform.localEulerAngles + new Vector3(-rpy_rot[1] * 57.3f, rpy_rot[2] * 57.3f, rpy_rot[0] * 57.3f));
+
+
+
                                     GameObject goParent = new GameObject();
                                     goParent.transform.parent = transform;
                                     goParent.name = link.Attribute("name").Value;
                                     go.transform.parent = goParent.transform;
+
+                                    if (go.GetComponent<MeshRenderer>() != null && color != null)
+                                        go.GetComponent<MeshRenderer>().material.color = color.Value;
                                 }
                                 else
                                 {
@@ -264,8 +325,19 @@ public class LoadMesh : ROSMonoBehavior {
                                             Destroy(tf.gameObject);
                                             continue;
                                         }
+
+
+                                        if (xyz_pos != null)
+                                            tf.transform.localPosition += new Vector3(-xyz_pos[1], xyz_pos[2], xyz_pos[0]);
+
                                         //tf.localRotation = Quaternion.Euler(-90, 0, 90);
-                                        tf.transform.localRotation = Quaternion.Euler(new Vector3(0, 90, 0) + go.transform.localEulerAngles + tf.transform.localEulerAngles);
+                                        if (rpy_rot == null)
+                                            tf.transform.localRotation = Quaternion.Euler(new Vector3(0, 90, 0) + tf.transform.localEulerAngles + go.transform.localEulerAngles);
+                                        else
+                                            tf.transform.localRotation = Quaternion.Euler(new Vector3(0, 90, 0) + tf.transform.localEulerAngles + go.transform.localEulerAngles + new Vector3(-rpy_rot[1] * 57.3f, rpy_rot[2] * 57.3f, rpy_rot[0] * 57.3f));
+
+                                        if (tf.GetComponent<MeshRenderer>() != null && color != null)
+                                            tf.GetComponent<MeshRenderer>().material.color = color.Value;
                                     }
                                     go.name = link.Attribute("name").Value;
                                     go.transform.parent = transform;
@@ -290,11 +362,20 @@ public class LoadMesh : ROSMonoBehavior {
                     float x, y, z;
                     if(float.TryParse(components[0], out x) && float.TryParse(components[1], out y) && float.TryParse(components[2], out z) )
                     {
-
+                        GameObject parent = new GameObject();
                         GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                        go.transform.parent = transform;
+
+                        parent.name = link.Attribute("name").Value;
+                        parent.transform.parent = transform;
+                        go.transform.parent = parent.transform;
                         go.transform.localScale = new Vector3(y, z, x);
-                        go.name = link.Attribute("name").Value;
+
+                        if (xyz_pos != null)
+                            go.transform.localPosition += new Vector3(-xyz_pos[1], xyz_pos[2], xyz_pos[0]);
+
+                        if (rpy_rot != null)
+                            go.transform.localRotation = Quaternion.Euler(new Vector3(-rpy_rot[1], rpy_rot[2], rpy_rot[0]));
+                        
                         if (go.GetComponent<MeshRenderer>() != null && color != null)
                             go.GetComponent<MeshRenderer>().material.color = color.Value;
                         //links.Add(go.name, new link(go, xyz));
@@ -310,10 +391,20 @@ public class LoadMesh : ROSMonoBehavior {
                     float fLength, fRadius;
                     if (float.TryParse(length, out fLength) && float.TryParse(radius, out fRadius))
                     {
+                        GameObject parent = new GameObject();
                         GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                        go.transform.parent = transform;
+                        parent.name = link.Attribute("name").Value;
+                        parent.transform.parent = transform;
+                        go.transform.parent = parent.transform;
                         go.transform.localScale = new Vector3(fRadius * 2, fLength/2, fRadius * 2);
-                        go.name = link.Attribute("name").Value;
+
+                        if (xyz_pos != null)
+                            go.transform.localPosition += new Vector3(-xyz_pos[1], xyz_pos[2], xyz_pos[0]);
+
+                        if (rpy_rot != null)
+                            go.transform.localRotation = Quaternion.Euler(new Vector3(-rpy_rot[1], rpy_rot[2], rpy_rot[0]));
+
+
                         if (go.GetComponent<MeshRenderer>() != null && color != null)
                             go.GetComponent<MeshRenderer>().material.color = color.Value;
                         //links.Add(go.name, new link(go, xyz));
@@ -356,7 +447,7 @@ public class LoadMesh : ROSMonoBehavior {
 
 
 }
-/*
+
 class link
 {
     public GameObject component { set; get; }
@@ -372,7 +463,7 @@ class link
         if (localPos != null)
         {
             string[] poses = localPos.Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
-            xyz = new float[poses.length];
+            xyz = new float[poses.Length];
             for (int index = 0; index < poses.Length; ++index)
             {
                 if (!float.TryParse(poses[index], out xyz[index]))
@@ -407,7 +498,7 @@ class joint
         if (childLocalPos != null)
         {
             string[] poses = childLocalPos.Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
-            xyz = new float[poses.length];
+            xyz = new float[poses.Length];
             for (int index = 0; index < poses.Length; ++index)
             {
                 if (!float.TryParse(poses[index], out xyz[index]))
@@ -425,5 +516,5 @@ class joint
     }
     
 }
-*/
+
 

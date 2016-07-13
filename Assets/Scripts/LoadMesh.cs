@@ -12,6 +12,8 @@ public class LoadMesh : ROSMonoBehavior {
     private string robotdescription;
     private Dictionary<string, Color?> materials = new Dictionary<string, Color?>();
     public XDocument RobotDescription { get; private set; }
+
+    public float XOffset = 0, YOffset = 90, ZOffset = 0;
     //private Dictionary<string, joint> joints = new Dictionary<string, joint>();
    // private Dictionary<string, link> links = new Dictionary<string, link>();
 
@@ -226,6 +228,7 @@ public class LoadMesh : ROSMonoBehavior {
                     }
                 }
             }
+            Vector3 rpy_v = new Vector3(rpy_rot[0] * 57.3f, rpy_rot[2] * 57.3f, rpy_rot[1] * 57.3f);
 
             float[] xyz_pos = null;
             string localPos = visual.Element("origin") == null ? null : visual.Element("origin").Attribute("xyz") == null ? null : visual.Element("origin").Attribute("xyz").Value;
@@ -241,10 +244,11 @@ public class LoadMesh : ROSMonoBehavior {
                     }
                 }
             }
+            Vector3 xyz_v = new Vector3(-xyz_pos[1], xyz_pos[2], xyz_pos[0]);
             //hackey shit
 
 
-            Color? color = null;
+            Color ? color = null;
             if(material != null)
             {
                 color = handleMaterial(material);
@@ -298,12 +302,12 @@ public class LoadMesh : ROSMonoBehavior {
                                     //go.transform.localRotation = Quaternion.Euler(new Vector3(0, 90, 0) + go.transform.localEulerAngles);
 
                                     if (xyz_pos != null)
-                                        go.transform.localPosition +=  new Vector3(xyz_pos[0], xyz_pos[1] , xyz_pos[2] );
+                                        go.transform.localPosition +=  xyz_v;
 
                                     if (rpy_rot == null)
-                                        go.transform.localRotation = Quaternion.Euler(new Vector3(0, 90, 0) + go.transform.localEulerAngles);
+                                        go.transform.localRotation = Quaternion.Euler(new Vector3(XOffset, YOffset, ZOffset) + go.transform.localEulerAngles);
                                     else
-                                        go.transform.localRotation = Quaternion.Euler(new Vector3(0, 90, 0) + go.transform.localEulerAngles + new Vector3(-rpy_rot[1] * 57.3f, rpy_rot[2] * 57.3f, rpy_rot[0] * 57.3f));
+                                        go.transform.localRotation = Quaternion.Euler(new Vector3(XOffset, YOffset, ZOffset) + go.transform.localEulerAngles + rpy_v);
 
 
 
@@ -328,13 +332,13 @@ public class LoadMesh : ROSMonoBehavior {
 
 
                                         if (xyz_pos != null)
-                                            tf.transform.localPosition += new Vector3(-xyz_pos[1], xyz_pos[2], xyz_pos[0]);
+                                            tf.transform.localPosition += xyz_v;
 
                                         //tf.localRotation = Quaternion.Euler(-90, 0, 90);
                                         if (rpy_rot == null)
-                                            tf.transform.localRotation = Quaternion.Euler(new Vector3(0, 90, 0) + tf.transform.localEulerAngles + go.transform.localEulerAngles);
+                                            tf.transform.localRotation = Quaternion.Euler(new Vector3(XOffset, YOffset, ZOffset) + tf.transform.localEulerAngles + go.transform.localEulerAngles);
                                         else
-                                            tf.transform.localRotation = Quaternion.Euler(new Vector3(0, 90, 0) + tf.transform.localEulerAngles + go.transform.localEulerAngles + new Vector3(-rpy_rot[1] * 57.3f, rpy_rot[2] * 57.3f, rpy_rot[0] * 57.3f));
+                                            tf.transform.localRotation = Quaternion.Euler(new Vector3(XOffset, YOffset, ZOffset) + tf.transform.localEulerAngles + go.transform.localEulerAngles + rpy_v);
 
                                         if (tf.GetComponent<MeshRenderer>() != null && color != null)
                                             tf.GetComponent<MeshRenderer>().material.color = color.Value;
@@ -374,7 +378,7 @@ public class LoadMesh : ROSMonoBehavior {
                             go.transform.localPosition += new Vector3(-xyz_pos[1], xyz_pos[2], xyz_pos[0]);
 
                         if (rpy_rot != null)
-                            go.transform.localRotation = Quaternion.Euler(new Vector3(-rpy_rot[1], rpy_rot[2], rpy_rot[0]));
+                            go.transform.localRotation = Quaternion.Euler(new Vector3(rpy_rot[1] * 57.3f, rpy_rot[2] * 57.3f, -rpy_rot[0] * 57.3f));
                         
                         if (go.GetComponent<MeshRenderer>() != null && color != null)
                             go.GetComponent<MeshRenderer>().material.color = color.Value;
@@ -402,7 +406,7 @@ public class LoadMesh : ROSMonoBehavior {
                             go.transform.localPosition += new Vector3(-xyz_pos[1], xyz_pos[2], xyz_pos[0]);
 
                         if (rpy_rot != null)
-                            go.transform.localRotation = Quaternion.Euler(new Vector3(-rpy_rot[1], rpy_rot[2], rpy_rot[0]));
+                            go.transform.localRotation = Quaternion.Euler(new Vector3(rpy_rot[1] * 57.3f, rpy_rot[2] * 57.3f, -rpy_rot[0] * 57.3f));
 
 
                         if (go.GetComponent<MeshRenderer>() != null && color != null)

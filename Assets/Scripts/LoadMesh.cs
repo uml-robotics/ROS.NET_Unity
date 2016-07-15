@@ -1,10 +1,15 @@
-﻿using UnityEngine;
+﻿//TODO: Clean up code, Add handling for figuring out orientation of meshes (E.G. PR2's meshes are Y up instaid Of Z up, find this as an element inside of the .dae's
+// Limbo: God damn screen is still rotated incorrectly. Look into urdf to dae converter for a possible sollution. 
+
+//#define BAD_VOODOO
+using UnityEngine;
 using System.Collections;
 using Ros_CSharp;
 using System.Collections.Generic;
 using System.Xml.Linq;
 using System;
 using System.IO;
+using Collada141;
 
 public class LoadMesh : ROSMonoBehavior {
 
@@ -213,7 +218,8 @@ public class LoadMesh : ROSMonoBehavior {
             //string materialName = material == null ? null : material.Attribute("name") == null ? null : material.Attribute("name").Value;
 
 
-            //hackey shit
+            //make a function that can return an array of floats given an element value
+            //hackey shit - gets relevant rpy rotation and xyz transform from the link
             float[] rpy_rot = null;
             string localRot = visual.Element("origin") == null ? null : visual.Element("origin").Attribute("rpy") == null ? null : visual.Element("origin").Attribute("rpy").Value;
             if (localRot != null)
@@ -228,7 +234,7 @@ public class LoadMesh : ROSMonoBehavior {
                     }
                 }
             }
-            Vector3 rpy_v = new Vector3(rpy_rot[0] * 57.3f, rpy_rot[2] * 57.3f, rpy_rot[1] * 57.3f);
+            Vector3 rpy_v = rpy_rot == null ? Vector3.zero : new Vector3(rpy_rot[0] * 57.3f, rpy_rot[2] * 57.3f, rpy_rot[1] * 57.3f);
 
             float[] xyz_pos = null;
             string localPos = visual.Element("origin") == null ? null : visual.Element("origin").Attribute("xyz") == null ? null : visual.Element("origin").Attribute("xyz").Value;
@@ -244,7 +250,7 @@ public class LoadMesh : ROSMonoBehavior {
                     }
                 }
             }
-            Vector3 xyz_v = new Vector3(-xyz_pos[1], xyz_pos[2], xyz_pos[0]);
+            Vector3 xyz_v = xyz_pos == null ? Vector3.zero :  new Vector3(-xyz_pos[1], xyz_pos[2], xyz_pos[0]);
             //hackey shit
 
 
@@ -266,19 +272,62 @@ public class LoadMesh : ROSMonoBehavior {
                     {
                         if (path.StartsWith("package://"))
                             path = path.Remove(0, 10);
-                      //  else
-                       //     throw new Exception("piss");
-                        Debug.Log("Trying to load " + path);
-                        if(path.EndsWith(".dae"))
+
+                        COLLADA foundDae = null;
+                        string dataPath = Application.dataPath;
+
+                        if (path.EndsWith(".dae"))
+                        {
+                            foundDae = COLLADA.Load(dataPath + "/Resources/" + path);
                             path = path.Substring(0, path.LastIndexOf("."));
+                        }
+
                         if (path.EndsWith(".DAE"))
+                        {
+                            foundDae = COLLADA.Load(dataPath + "/Resources/" + path);
                             path = path.Substring(0, path.LastIndexOf("."));
+                        }
 
                         try {
                             UnityEngine.Object foundMesh = Resources.Load(path) as GameObject;
+
+                            //handle rotations based on what axis is up for the mesh, this should fix most problems but 
+                            //a better solution may need to be persued.  Potentially rewriting the meshes to be some specific orientation (probably Z)
+                            //and reloading them.
+                            if (foundDae != null)
+                            {
+
+                                switch (foundDae.asset.up_axis)
+                                {
+                                    case (UpAxisType.Z_UP):
+                                        rpy_v += new Vector3(0f, 90f, 0f);
+                                        break;
+                                    case (UpAxisType.X_UP):
+                                        //NA at the moment                               
+                                        break;
+
+                                    case (UpAxisType.Y_UP):
+                                        rpy_v += new Vector3(-90f, 90f, 0f);
+                                        break;
+
+                                    default:
+                                        //NA at the moment
+                                        break;
+                                }
+                            }
+
                             if (foundMesh != null)
                             {
-                                GameObject go = Instantiate(foundMesh as GameObject);
+#if BAD_VOODOO
+                                Vector3 pos = new Vector3();
+                                if (xyz_pos != null)
+                                    pos = xyz_v;
+                                Quaternion rpyrot = Quaternion.Euler(rpy_v);
+                                Quaternion offrot = Quaternion.Euler(new Vector3(XOffset, YOffset, ZOffset));
+                                GameObject go = (GameObject)Instantiate(foundMesh, pos, rpyrot*offrot);
+                                go.transform.SetParent(transform, false);
+                                go.name = link.Attribute("name").Value;
+
                                 // = new GameObject();
                                 //goParent.transform.parent = transform;
                                 //goParent.name = link.Attribute("name").Value;
@@ -289,35 +338,54 @@ public class LoadMesh : ROSMonoBehavior {
 
                                 if (go.transform.childCount == 0)
                                 {
-                                    /*
-                                    if (go.transform.localEulerAngles.x != 270)
+                                    GameObject goParent = new GameObject();
+                                    goParent.transform.SetParent(go.transform.parent, false);
+                                    goParent.transform.localPosition = go.transform.localPosition;
+                                    goParent.transform.localRotation = go.transform.localRotation;
+                                    go.transform.SetParent(goParent.transform, false);
+                                    go.transform.localRotation = Quaternion.identity;
+                                    go.transform.localPosition = new Vector3();
+                                    goParent.name = link.Attribute("name").Value;
+                                    go = goParent;
+                                }
+                                    
+                                for (int i=0;i<go.transform.childCount;i++)
+                                {
+                                    Transform tf = go.transform.GetChild(i);
+                                    if (tf.name == "Lamp" || tf.name == "Camera")
                                     {
-                                        go.transform.localRotation *= Quaternion.Euler(-90, 0, 90);
+                                        Destroy(tf.gameObject);
+                                        continue;
                                     }
-                                    else
-                                    {
-                                        go.transform.localRotation *= Quaternion.Euler(0, 0, 90);
-                                    }
-                                    */
-                                    //go.transform.localRotation = Quaternion.Euler(new Vector3(0, 90, 0) + go.transform.localEulerAngles);
+                                    Quaternion tfrot = tf.transform.localRotation;
 
-                                    if (xyz_pos != null)
-                                        go.transform.localPosition +=  xyz_v;
+                                    tf.transform.localRotation = tfrot *go.transform.localRotation* rpyrot * offrot;
 
-                                    if (rpy_rot == null)
-                                        go.transform.localRotation = Quaternion.Euler(new Vector3(XOffset, YOffset, ZOffset) + go.transform.localEulerAngles);
-                                    else
-                                        go.transform.localRotation = Quaternion.Euler(new Vector3(XOffset, YOffset, ZOffset) + go.transform.localEulerAngles + rpy_v);
+                                    if (tf.GetComponent<MeshRenderer>() != null && color != null)
+                                        tf.GetComponent<MeshRenderer>().material.color = color.Value;
+                                }
+#else
+                                GameObject go = Instantiate(foundMesh as GameObject);
+                                if (link.Attribute("name").Value == "pedestal")
+                                    Debug.Log("thin");
 
 
+                                //crunch this down into a simpler chunk of code to eliminate repetition 
+                                if (go.transform.childCount == 0)
+                                {
 
+                                    go.transform.localPosition += xyz_v;
+                                    go.transform.localRotation = Quaternion.Euler(rpy_v + go.transform.localEulerAngles);
+                                    
                                     GameObject goParent = new GameObject();
                                     goParent.transform.parent = transform;
                                     goParent.name = link.Attribute("name").Value;
                                     go.transform.parent = goParent.transform;
 
-                                    if (go.GetComponent<MeshRenderer>() != null && color != null)
-                                        go.GetComponent<MeshRenderer>().material.color = color.Value;
+                                    //this sucks, 
+                                    // in some cases the urdf is declaring a mesh but not all the meshes that the dae needs
+                                   // if (go.GetComponent<MeshRenderer>() != null && color != null)
+                                    //    go.GetComponent<MeshRenderer>().material.color = color.Value;
                                 }
                                 else
                                 {
@@ -329,24 +397,19 @@ public class LoadMesh : ROSMonoBehavior {
                                             Destroy(tf.gameObject);
                                             continue;
                                         }
+                                        tf.transform.localPosition += xyz_v;
+                                        tf.transform.localRotation = Quaternion.Euler(tf.transform.localEulerAngles + go.transform.localEulerAngles + rpy_v);
 
-
-                                        if (xyz_pos != null)
-                                            tf.transform.localPosition += xyz_v;
-
-                                        //tf.localRotation = Quaternion.Euler(-90, 0, 90);
-                                        if (rpy_rot == null)
-                                            tf.transform.localRotation = Quaternion.Euler(new Vector3(XOffset, YOffset, ZOffset) + tf.transform.localEulerAngles + go.transform.localEulerAngles);
-                                        else
-                                            tf.transform.localRotation = Quaternion.Euler(new Vector3(XOffset, YOffset, ZOffset) + tf.transform.localEulerAngles + go.transform.localEulerAngles + rpy_v);
-
-                                        if (tf.GetComponent<MeshRenderer>() != null && color != null)
-                                            tf.GetComponent<MeshRenderer>().material.color = color.Value;
+                                        //this sucks, 
+                                        // in some cases the urdf is declaring a mesh but not all the meshes that the dae needs
+                                       // if (tf.GetComponent<MeshRenderer>() != null && color != null)
+                                         //   tf.GetComponent<MeshRenderer>().material.color = color.Value;
                                     }
                                     go.name = link.Attribute("name").Value;
                                     go.transform.parent = transform;
 
                                 }
+#endif
                             }
                         }
                         catch(Exception e)
@@ -417,8 +480,8 @@ public class LoadMesh : ROSMonoBehavior {
                 }
 
             }
-
-        }else
+        }
+        else
         {
             GameObject go = new GameObject();
             go.transform.parent = transform;

@@ -57,6 +57,7 @@ public class TfVisualizer : ROSMonoBehavior
         ObjectNames.SetNameSmart(Root, FixedFrame);
 #endif
 	    Root.GetComponentInChildren<TextMesh>(true).text = FixedFrame;
+        Root.GetComponentInChildren<CompressedImageDisplay>().gameObject.SetActive(false);
         tree[FixedFrame] = Root;
         hideChildrenInHierarchy(Root);
 
@@ -128,6 +129,14 @@ public class TfVisualizer : ROSMonoBehavior
 #endif
                         tree[tf.child_frame_id] = newframe;
                         tree[tf.child_frame_id].gameObject.GetComponentInChildren<TextMesh>(true).text = tf.child_frame_id;
+
+                    if (tf.child_frame_id.EndsWith("camera"))
+                    {
+                        string topic = "/" + tf.child_frame_id.Split('/')[1] + "/image_raw/compressed";
+                        tree[tf.child_frame_id].GetComponentInChildren<CompressedImageDisplay>().topic = topic;
+                    }
+                    else
+                        tree[tf.child_frame_id].GetComponentInChildren<CompressedImageDisplay>().gameObject.SetActive(false);
                     }
 
                     Transform value;

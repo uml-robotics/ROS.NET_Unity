@@ -70,12 +70,27 @@ public class RobotSubscriptionManagerUI : Editor
                         if (GUI.changed)
                             fi.SetValue(script, temp);
                     }
+
+                    if (fi.FieldType.Equals(typeof(Vector3)))
+                    {
+                        Vector3 temp = EditorGUILayout.Vector3Field(fi.Name, (Vector3)fi.GetValue(script));
+                        if (GUI.changed)
+                            fi.SetValue(script, temp);
+                    }
+
+                    if (fi.FieldType.Equals(typeof(Color)))
+                    {
+                        Color temp = EditorGUILayout.ColorField(fi.Name, (Color)fi.GetValue(script));
+                        if (GUI.changed)
+                            fi.SetValue(script, temp);
+                    }
+
                 }
                 EditorGUILayout.Space();
                 EditorGUILayout.Space();
             }
 
-            //update agents
+            //update child scripts (agents)
             if (GUI.changed)
             {
                 foreach (Component script in rsmTarget.getChildScripts())

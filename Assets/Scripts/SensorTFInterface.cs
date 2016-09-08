@@ -36,7 +36,7 @@ public class SensorTFInterface<M> : ROSMonoBehavior where M : IRosMessage, new()
         }
     }
 
-    private String TFName;//currently being used to lookup the TF
+    protected String TFName;//currently being used to lookup the TF
 
     //this will be the transform the topic is associated with 
     internal Transform TF
@@ -70,7 +70,7 @@ public class SensorTFInterface<M> : ROSMonoBehavior where M : IRosMessage, new()
     //figures out the frameid of the sensor 
     private void _realCallback(M msg)
     {
-        if (msg.HasHeader)
+        if (TFName == null && msg.HasHeader())
         {
             FieldInfo fi = msg.GetType().GetFields().First((a) => { return a.FieldType.Equals(typeof(Messages.std_msgs.Header)); });
             if (fi != null)

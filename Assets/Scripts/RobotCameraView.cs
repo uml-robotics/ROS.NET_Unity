@@ -17,10 +17,9 @@ public class RobotCameraView : SensorTFInterface<CompressedImage>
     protected override void Start ()
     {
         TFName = NameSpace + (frame_id.StartsWith("/") ? "" : "/") + frame_id;
-        
-        cameraView = GameObject.CreatePrimitive(PrimitiveType.Plane);
-        cameraView.transform.parent = transform;
 
+        cameraView = transform.GetChild(0).gameObject;
+        cameraView.SetActive(true);
         //transform camera to be oriented properly
         cameraView.transform.localScale = new Vector3(ScreenSize, ScreenSize, ScreenSize);
         cameraView.transform.localPosition = PositionOffset;

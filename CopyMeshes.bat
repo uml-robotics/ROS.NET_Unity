@@ -8,15 +8,17 @@ REM echo IN %cd%
 if EXIST meshes for /D %%F in (*meshes) do (
 if "%%F" == "meshes" (
 for %%f in (%cd%) do set myfolder=%%~nxf
-echo xcopy /E /I /Y /Q %cd% %DEST%\%myfolder%
-xcopy /E /I /Y /Q %cd% %DEST%\%myfolder%
+@echo on
+xcopy /E /I /Y /Q "%cd%" "%DEST%\%myfolder%"
+@echo off
 )
 if not "%%F" == "meshes" (
 set src=%%~dpF
 set MYDIR1=%src:~0,-1%
 for %%f in (%MYDIR1%) do set myfolder=%%~nxf
-echo xcopy /E /I /Y /Q %MYDIR1% %DEST%\%myfolder%
-xcopy /E /I /Y /Q %MYDIR1% %DEST%\%myfolder%
+@echo on
+xcopy /E /I /Y /Q "%MYDIR1%" "%DEST%\%myfolder%"
+@echo off
 )
 )
 :start

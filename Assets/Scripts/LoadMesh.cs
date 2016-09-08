@@ -1,8 +1,4 @@
-﻿//TODO: Clean up code, Add handling for figuring out orientation of meshes (E.G. PR2's meshes are Y up instaid Of Z up, find this as an element inside of the .dae's
-// Limbo: God damn screen is still rotated incorrectly. Look into urdf to dae converter for a possible sollution. 
-
-//#define BAD_VOODOO
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using Ros_CSharp;
 using System.Collections.Generic;
@@ -18,9 +14,7 @@ public class LoadMesh : ROSMonoBehavior {
     private Dictionary<string, Color?> materials = new Dictionary<string, Color?>();
     public XDocument RobotDescription { get; private set; }
 
-    public float XOffset = 0, YOffset = 90, ZOffset = 0;
-    //private Dictionary<string, joint> joints = new Dictionary<string, joint>();
-   // private Dictionary<string, link> links = new Dictionary<string, link>();
+    //public float XOffset = 0, YOffset = 90, ZOffset = 0;
 
     private TfVisualizer tfviz
     {
@@ -32,7 +26,7 @@ public class LoadMesh : ROSMonoBehavior {
 
 
     //ros stuff
-    protected string NameSpace = "";
+    public string NameSpace = "";
     public void setNamespace(string _NameSpace)
     {
         NameSpace = _NameSpace;
@@ -96,51 +90,11 @@ public class LoadMesh : ROSMonoBehavior {
             if (element.Name == "gazebo")
             {
                 XElement link = element.Element("link");
-                if(link != null)
+                if (link != null)
                     handleLink(link);
             }
-
-            /*
-            if(element.Name == "joint")
-                 handleJoint(element);
-            */
         }
-        /*
-           due to how the code hase been changed its likely not necessary to maintaine joint and link obj's 
-           It seems like maintaining a hierarchy is unecessary and just producing more work. This may be 
-           brought back though if it is necessary for more complex urdfs. 
-        */
-        //handle hierarchy 
-        /*
-        foreach(KeyValuePair<string, link> curLink in links)
-        {
-            //curLink.Value.component.transform.parent = transform;
-            
-            if(!joints.ContainsKey(curLink.Key)) //if true, this is likely the root element
-            {
-                curLink.Value.component.transform.parent = transform;
-                curLink.Value.component.transform.localPosition = new Vector3(0, 0, 0);
-                curLink.Value.component.gameObject.SetActive(true);
-                continue;
-            }
-            joint curJoint = joints[curLink.Key];
-            link parentLink = links[curJoint.parent];
-            Transform curTrans = curLink.Value.component.transform;
-            //curTrans.parent = parentLink.component.transform;
-            curTrans.parent = transform;
-            float[] xyz;
-            if ((xyz = curLink.Value.localPosToFloat()) == null)
-            {
-                if ((xyz = curJoint.localPosToFloat()) == null)
-                {
-                    xyz = new float[] { 0, 0, 0 };
-                }
-            }
-            curTrans.localPosition = new Vector3(-xyz[0], xyz[2], xyz[1]);//+ curTrans.parent.transform.localPosition;
-            curTrans.gameObject.SetActive(true);
-            
-    }
-        */
+        
         return true;
     }
     
@@ -185,19 +139,13 @@ public class LoadMesh : ROSMonoBehavior {
         return colorOut;
     }
     
-    //not being used at the moment, may be necessary for make more generic code
+    //curently not using joints
     bool handleJoint(XElement joint)
     {
         XElement origin = joint.Element("origin");
         XElement parent = joint.Element("parent");
         XElement child = joint.Element("child");
         string strOrigin = origin == null ? null : origin.Attribute("xyz") == null ? null : origin.Attribute("xyz").Value;
-        /*
-        if(parent != null && child != null)
-        {
-            joints.Add(child.Attribute("link").Value, new joint(parent.Attribute("link").Value, child.Attribute("link").Value, strOrigin));
-        }
-        */
         return true;
     }
 
@@ -233,7 +181,7 @@ public class LoadMesh : ROSMonoBehavior {
                         rpy_rot[index] = 0;
                     }
                 }
-            }
+            }//may be incorect shifting of rpy 
             Vector3 rpy_v = rpy_rot == null ? Vector3.zero : new Vector3(rpy_rot[0] * 57.3f, rpy_rot[2] * 57.3f, rpy_rot[1] * 57.3f);
 
             float[] xyz_pos = null;
@@ -318,53 +266,6 @@ public class LoadMesh : ROSMonoBehavior {
 
                             if (foundMesh != null)
                             {
-#if BAD_VOODOO
-                                Vector3 pos = new Vector3();
-                                if (xyz_pos != null)
-                                    pos = xyz_v;
-                                Quaternion rpyrot = Quaternion.Euler(rpy_v);
-                                Quaternion offrot = Quaternion.Euler(new Vector3(XOffset, YOffset, ZOffset));
-                                GameObject go = (GameObject)Instantiate(foundMesh, pos, rpyrot*offrot);
-                                go.transform.SetParent(transform, false);
-                                go.name = link.Attribute("name").Value;
-
-                                // = new GameObject();
-                                //goParent.transform.parent = transform;
-                                //goParent.name = link.Attribute("name").Value;
-                                //go.transform.parent = goParent.transform;
-
-                                if (link.Attribute("name").Value == "pedestal")
-                                    Debug.Log("thin");
-
-                                if (go.transform.childCount == 0)
-                                {
-                                    GameObject goParent = new GameObject();
-                                    goParent.transform.SetParent(go.transform.parent, false);
-                                    goParent.transform.localPosition = go.transform.localPosition;
-                                    goParent.transform.localRotation = go.transform.localRotation;
-                                    go.transform.SetParent(goParent.transform, false);
-                                    go.transform.localRotation = Quaternion.identity;
-                                    go.transform.localPosition = new Vector3();
-                                    goParent.name = link.Attribute("name").Value;
-                                    go = goParent;
-                                }
-                                    
-                                for (int i=0;i<go.transform.childCount;i++)
-                                {
-                                    Transform tf = go.transform.GetChild(i);
-                                    if (tf.name == "Lamp" || tf.name == "Camera")
-                                    {
-                                        Destroy(tf.gameObject);
-                                        continue;
-                                    }
-                                    Quaternion tfrot = tf.transform.localRotation;
-
-                                    tf.transform.localRotation = tfrot *go.transform.localRotation* rpyrot * offrot;
-
-                                    if (tf.GetComponent<MeshRenderer>() != null && color != null)
-                                        tf.GetComponent<MeshRenderer>().material.color = color.Value;
-                                }
-#else
                                 GameObject go = Instantiate(foundMesh as GameObject);
                                 if (link.Attribute("name").Value == "pedestal")
                                     Debug.Log("thin");
@@ -409,14 +310,13 @@ public class LoadMesh : ROSMonoBehavior {
                                     go.transform.parent = transform;
 
                                 }
-#endif
                             }
                         }
                         catch(Exception e)
                         {
                             Debug.LogWarning(e);
                         }
-                       // links.Add(go.name, new link(go, xyz));
+                       
                     }
                 }
 
@@ -486,28 +386,27 @@ public class LoadMesh : ROSMonoBehavior {
             GameObject go = new GameObject();
             go.transform.parent = transform;
             go.name = link.Attribute("name").Value;
-            //links.Add(go.name, new link(go, null));
+
         }
         return true;
     }
 
 
-    // Update is called once per frame
+    //Position meshes appropriately in space 
     void Update()
     {
 
         foreach (Transform tf in transform)
         {
             Transform tff;
+
             if (tfviz.queryTransforms(NameSpace + "/" + tf.name, out tff))
             {
                 tf.transform.position = tff.position;
                 tf.transform.rotation = tff.rotation;
-                // tff = transform;
+
             }
 
-            //tf.transform.position = tff.position;
-            //tf.transform.rotation = tff.rotation;
         }
 
     }
@@ -515,73 +414,5 @@ public class LoadMesh : ROSMonoBehavior {
 
 }
 
-class link
-{
-    public GameObject component { set; get; }
-    public string localPos { set; get; }
-    public link(GameObject component, string localPos)
-    {
-        this.component = component;
-        this.localPos = localPos;
-    }
-    public float[] localPosToFloat()
-    {
-        float[] xyz;
-        if (localPos != null)
-        {
-            string[] poses = localPos.Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
-            xyz = new float[poses.Length];
-            for (int index = 0; index < poses.Length; ++index)
-            {
-                if (!float.TryParse(poses[index], out xyz[index]))
-                {
-                    xyz[index] = 0;
-                }
-            }
-        }else
-        {
-            return null;
-        }
-        return xyz;
-
-    }
-
-}
-
-class joint
-{
-    public string parent { set; get; }
-    public string child  { set; get; }
-    public string childLocalPos  { set; get; }
-    public joint ( string parent, string child, string childLocalPos)
-    {
-        this.child = child;
-        this.parent = parent;
-        this.childLocalPos = childLocalPos;
-    }
-    public float[] localPosToFloat()
-    {
-        float[] xyz;
-        if (childLocalPos != null)
-        {
-            string[] poses = childLocalPos.Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
-            xyz = new float[poses.Length];
-            for (int index = 0; index < poses.Length; ++index)
-            {
-                if (!float.TryParse(poses[index], out xyz[index]))
-                {
-                    xyz[index] = 0;
-                }
-            }
-        }
-        else
-        {
-            return null;
-        }
-        return xyz;
-
-    }
-    
-}
 
 

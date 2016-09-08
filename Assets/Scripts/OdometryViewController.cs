@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-using Ros_CSharp;
 using Messages.nav_msgs;
 
 public class OdometryViewController : SensorTFInterface<Odometry> {

@@ -65,6 +65,21 @@ public class ROSManager
     private static StreamWriter logwriter = null;
 #endif
 
+    private static AutoResetEvent roslock = new AutoResetEvent(true);
+
+    private static void _startROS()
+    {
+        if (!ROS.isStarted() && roslock.WaitOne())
+        {
+            // Make sure we are still the first caller to initialize ros, in case we blocked waiting for the lock
+            if (!ROS.isStarted())
+            {
+                ROS.Init(new string[0], "unity_test_" + DateTime.Now.Ticks);
+                tf.net.Transformer.LateInit();
+            }
+            roslock.Set();
+        }
+    }
 
     /// <summary>
     /// Call ROS.Init if it hasn't been called, and informs callers whether to try to make a nodehandle and pubs/subs
@@ -72,24 +87,20 @@ public class ROSManager
     /// <returns>Whether ros.net initialization can continue</returns>
     public void StartROS(MonoBehaviour caller, Action whensuccessful)
     {
+        XmlRpcUtil.SetLogLevel(XmlRpcUtil.XMLRPC_LOG_LEVEL.ERROR);
         if (whensuccessful != null)
         {
             Action whatToDo = () =>
             {
 #if UNITY_EDITOR
-                if (EditorApplication.isPlaying && !EditorApplication.isPaused)
-                {
-#endif
-                    if (!ROS.isStarted())
+                    if (EditorApplication.isPlaying && !EditorApplication.isPaused)
                     {
-                        ROS.Init(new string[0], "unity_test_" + DateTime.Now.Ticks);
-                        XmlRpcUtil.SetLogLevel(XmlRpcUtil.XMLRPC_LOG_LEVEL.ERROR);
-                        tf.net.Transformer.LateInit();
-                    }
-                    if (whensuccessful != null)
-                        whensuccessful();
+#endif
+                        _startROS();
+                        if (whensuccessful != null)
+                            whensuccessful();
 #if UNITY_EDITOR
-                }
+                    }
 #endif
             };
             if (caller != null)
@@ -104,12 +115,21 @@ public class ROSManager
                     Debug.LogError("Failed to test for applicability, show, or handle masterchooser input");
                 }
             }
+            else
+            {
+                whatToDo();
+            }
         }
-        else if (EditorApplication.isPlaying && !EditorApplication.isPaused && !ROS.isStarted())
+        else
         {
-            ROS.Init(new string[0], "unity_test_" + DateTime.Now.Ticks);
-            XmlRpcUtil.SetLogLevel(XmlRpcUtil.XMLRPC_LOG_LEVEL.ERROR);
-            tf.net.Transformer.LateInit();
+#if UNITY_EDITOR
+            if (EditorApplication.isPlaying && !EditorApplication.isPaused)
+            {
+#endif
+                _startROS();
+#if UNITY_EDITOR
+            }
+#endif
         }
 #if LOG_TO_FILE
         lock (loggerlock)
@@ -170,8 +190,15 @@ public class ROSManager
 
     public static void StopROS()
     {
-        Debug.Log("ROSManager is shutting down");
-        ROS.shutdown();
+        if (ROS.isStarted() && !ROS.shutting_down && roslock.WaitOne())
+        {
+            if (ROS.isStarted() && !ROS.shutting_down)
+            {
+                Debug.Log("ROSManager is shutting down");
+                ROS.shutdown();
+            }
+            roslock.Set();
+        }
         ROS.waitForShutdown();
 #if LOG_TO_FILE
         lock (loggerlock)

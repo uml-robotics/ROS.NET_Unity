@@ -25,8 +25,8 @@ public class OdometryViewController : SensorTFInterface<Odometry> {
         lock(currentMsg)
         {
             currentMsg = scan;
-            currentPos = RosPointToVector3( scan.pose.pose.position);
-            currentQuat = RosToUnityQuat(scan.pose.pose.orientation);
+            currentPos = new tf.net.emVector3(currentMsg.pose.pose.position.x, currentMsg.pose.pose.position.y, currentMsg.pose.pose.position.z).UnityPosition;
+            currentQuat = new tf.net.emQuaternion(currentMsg.pose.pose.orientation).UnityRotation;
         }
     }
 
@@ -35,12 +35,34 @@ public class OdometryViewController : SensorTFInterface<Odometry> {
         base.Start();
         oldArrowLength = ArrowLength;
         arrowGO = transform.GetChild(0).gameObject;
-        arrowGO.SetActive(false);
     }
 
     // Update is called once per frame
-   protected override void Update() {
-        lock(Arrows)
+   protected override void Update()
+   {
+       GameObject arrow = null;
+        lock (currentMsg)
+        {
+            //TODO make Angle tolerance better reflect Rviz. UPDATE Rviz has some weird ass voodoo scalling for their angle tolerance
+            if ((lastPos != null && (currentPos - lastPos).magnitude > PositionTolerance) || (lastQuat != null && Mathf.Pow(Mathf.DeltaAngle(currentQuat.eulerAngles.y, lastQuat.eulerAngles.y), 2) / 14400 > AngleTolerance))
+            {
+                arrow = Instantiate(arrowGO, arrowGO.transform.parent, false);
+                arrow.SetActive(true); 
+                arrow.transform.rotation = (currentQuat * Quaternion.Euler(90, 0, 0));
+                arrow.transform.position = arrow.transform.TransformVector(new Vector3(0f, ArrowLength, 0f)) + currentPos;
+                arrow.transform.localScale = new Vector3(ArrowLength, ArrowLength, ArrowLength);
+
+                foreach (MeshRenderer mesh in arrow.GetComponentsInChildren<MeshRenderer>())
+                {
+                    mesh.material.color = Color;
+                }
+
+                lastPos = currentPos;
+                lastQuat = currentQuat;
+            }
+        }
+        
+        lock (Arrows)
         {
             //base.Update() Odometry does not need it's transform handled
             while (Arrows.Count > Keep)
@@ -50,73 +72,28 @@ public class OdometryViewController : SensorTFInterface<Odometry> {
 
             if (oldArrowLength != ArrowLength)
             {
-                foreach (GameObject arrow in Arrows)
+                foreach (GameObject ar in Arrows)
                 {
-                    arrow.transform.localScale = new Vector3(ArrowLength, ArrowLength, ArrowLength);
+                    ar.transform.localScale = new Vector3(ArrowLength, ArrowLength, ArrowLength);
                 }
             }
 
-            lock (currentMsg)
-            {
+            if (arrow == null)
+                return;
 
-                if (currentMsg.pose == null)
-                    return;
-
-                if (lastPos == null || lastQuat == null)
-                {
-                    lastQuat = currentQuat;
-                    lastPos = currentPos;
-                    return;
-                }
-
-                //TODO make Angle tolerance better reflect Rviz. UPDATE Rviz has some weird ass voodoo scalling for their angle tolerance
-                if ((currentPos - lastPos).magnitude > (PositionTolerance) || (Mathf.Pow(Mathf.DeltaAngle(currentQuat.eulerAngles.y, lastQuat.eulerAngles.y), 2) / 14400 > AngleTolerance))
-                {
-                    GameObject arrow = Instantiate(arrowGO);
-                    arrow.transform.rotation = (currentQuat * Quaternion.Euler(90, 0, 0));
-                    arrow.transform.position = arrow.transform.TransformVector(new Vector3(0f, ArrowLength, 0f)) + currentPos;
-                    arrow.SetActive(true);
-                    arrow.transform.localScale = new Vector3(ArrowLength, ArrowLength, ArrowLength);
-                    arrow.hideFlags |= HideFlags.HideInHierarchy;
-
-                    foreach (MeshRenderer mesh in arrow.GetComponentsInChildren<MeshRenderer>())
-                    {
-
-                        mesh.material.color = Color;
-                    }
-
-                    Arrows.Enqueue(arrow);
-                    lastPos = currentPos;
-                    lastQuat = currentQuat;
-                }
-            }
+            Arrows.Enqueue(arrow);
         }
-    }
-    
-    Quaternion RosToUnityQuat(Messages.geometry_msgs.Quaternion Ros_Quat)
-    {
-        return new tf.net.emQuaternion(Ros_Quat).UnityRotation;
-    }
-
-    Vector3 RosPointToVector3(Messages.geometry_msgs.Point ROS_Point)
-    {
-        return new tf.net.emVector3(ROS_Point.x, ROS_Point.y, ROS_Point.z).UnityPosition;
     }
 
     void OnDisable()
     {
         lock (Arrows)
-        while (Arrows.Count > 0)
-        {
-            if (Arrows.Peek() != null)
+            while (Arrows.Count > 0)
             {
-                Destroy(Arrows.Dequeue());
+                if (Arrows.Peek() != null)
+                {
+                    Destroy(Arrows.Dequeue());
+                }
             }
-            else
-            {
-                Arrows.Dequeue();
-            }
-
-        }
     }
 }

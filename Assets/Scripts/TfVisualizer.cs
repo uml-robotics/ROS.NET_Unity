@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 using XmlRpc_Wrapper;
 using gm = Messages.geometry_msgs;
 using Messages.tf;
@@ -13,8 +10,15 @@ using System.Collections;
 using Ros_CSharp;
 using System.Linq;
 
+#if UNITY_EDITOR
+using UnityEditor;
+[InitializeOnLoad]
+#endif
 public class TfVisualizer : ROSMonoBehavior
 {
+    public TfVisualizer()
+    {
+    }
     private NodeHandle nh = null;
     private Subscriber<Messages.tf.tfMessage> tfsub, tfstaticsub;
     private Text textmaybe;
@@ -47,6 +51,7 @@ public class TfVisualizer : ROSMonoBehavior
     {
         if (transform.childCount == 0)
             throw new Exception("Unable to locate the template TFFrame for the TFTree");
+        TfTreeManager.Instance.SetTFVisualizer(this);
         Template = transform.GetChild(0);
         Root = (Transform)Instantiate(Template);
         Root.SetParent(transform);
@@ -59,7 +64,6 @@ public class TfVisualizer : ROSMonoBehavior
 	    Root.GetComponentInChildren<TextMesh>(true).text = FixedFrame;
         tree[FixedFrame] = Root;
         hideChildrenInHierarchy(Root);
-
 	    rosmanager.StartROS(this, () =>
 	                                                       {
 	                                                           nh = new NodeHandle();

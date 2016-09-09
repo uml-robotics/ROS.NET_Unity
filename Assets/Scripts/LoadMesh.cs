@@ -13,17 +13,8 @@ public class LoadMesh : ROSMonoBehavior {
     private string robotdescription;
     private Dictionary<string, Color?> materials = new Dictionary<string, Color?>();
     public XDocument RobotDescription { get; private set; }
-
-    //public float XOffset = 0, YOffset = 90, ZOffset = 0;
-
-    private TfVisualizer tfviz
-    {
-        get
-        {
-            return transform.root.GetComponent<TfVisualizer>();
-        }
-    }
-
+    
+    private TfVisualizer tfviz;
 
     //ros stuff
     public string NameSpace = "";
@@ -36,8 +27,8 @@ public class LoadMesh : ROSMonoBehavior {
     void Start () {
         rosmanager.StartROS(this, () => {
             nh = new NodeHandle();
+            Load();
         });
-        Load();
     }
 	
     //Written by Eric M.
@@ -57,7 +48,12 @@ public class LoadMesh : ROSMonoBehavior {
 
         if (Param.get(NameSpace + RobotDescriptionParam, ref robotdescription))
         {
-            return Parse();
+            TfTreeManager.Instance.AddListener(vis => 
+            {
+                tfviz = vis;
+                Parse();
+            });
+            return true;
         }
         return false;
     }
@@ -400,7 +396,7 @@ public class LoadMesh : ROSMonoBehavior {
         {
             Transform tff;
 
-            if (tfviz.queryTransforms(NameSpace + "/" + tf.name, out tff))
+            if (tfviz != null && tfviz.queryTransforms(NameSpace + "/" + tf.name, out tff))
             {
                 tf.transform.position = tff.position;
                 tf.transform.rotation = tff.rotation;

@@ -14,7 +14,6 @@ using UnityEditor;
 #endif
 public class ROSMonoBehavior : MonoBehaviour
 {
-    
     protected static readonly ROSManager rosmanager;
     static ROSMonoBehavior()
     {

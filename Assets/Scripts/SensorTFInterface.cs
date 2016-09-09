@@ -7,12 +7,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using Header = Messages.std_msgs.Header;
 
 public class SensorTFInterface<M> : ROSMonoBehavior where M : IRosMessage, new()
 {
-    
-    private static TfVisualizer _tfvisualizer;
-    private static object vislock = new object();
     public bool MakeChildOfTF = false;
     public String Topic; //the topic the base and child class will be subscribing too
                          //also the topic that the TF will be associated with
@@ -23,23 +21,14 @@ public class SensorTFInterface<M> : ROSMonoBehavior where M : IRosMessage, new()
     }
 
     //get tfVisualizer from root to lookup iframe
-    internal TfVisualizer tfvisualizer
-    {
-        get
-        {
-            if (_tfvisualizer == null)
-            {
-                _tfvisualizer = transform.root.GetComponentInChildren<TfVisualizer>();
-            }
-
-            return _tfvisualizer;
-        }
-    }
+    private TfVisualizer tfvisualizer;
 
     protected String TFName;//currently being used to lookup the TF
 
+    private Transform oldParent = null;
+
     //this will be the transform the topic is associated with 
-    internal Transform TF
+    protected Transform TF
     {
         get
         {
@@ -60,8 +49,15 @@ public class SensorTFInterface<M> : ROSMonoBehavior where M : IRosMessage, new()
         }
     }
 
-    public SensorTFInterface() {}
-    public SensorTFInterface (bool _MakeChildOfTF) { MakeChildOfTF = _MakeChildOfTF; }
+    public SensorTFInterface()
+    {
+        TfTreeManager.Instance.AddListener(vis =>
+                                               {
+                                                   Debug.LogWarning("SensorTFInterface has a tfvisualizer now!");
+                                                   tfvisualizer = vis;
+                                               });
+    }
+    public SensorTFInterface (bool _MakeChildOfTF) : this() { MakeChildOfTF = _MakeChildOfTF; }
 
     //ros stuff
     internal NodeHandle nh;
@@ -72,7 +68,7 @@ public class SensorTFInterface<M> : ROSMonoBehavior where M : IRosMessage, new()
     {
         if (TFName == null && msg.HasHeader())
         {
-            FieldInfo fi = msg.GetType().GetFields().First((a) => { return a.FieldType.Equals(typeof(Messages.std_msgs.Header)); });
+            FieldInfo fi = msg.GetType().GetFields().First(a => a.FieldType == typeof(Header));
             if (fi != null)
             {
                 TFName = ((Messages.std_msgs.Header)fi.GetValue(msg)).frame_id;
@@ -103,16 +99,20 @@ public class SensorTFInterface<M> : ROSMonoBehavior where M : IRosMessage, new()
     {
         if(MakeChildOfTF && transform.parent != TF)
         {
+            oldParent = transform.parent;
             transform.parent = TF;
         }
 
         if (!MakeChildOfTF)
         {
+            if (oldParent != null)
+            {
+                transform.parent = oldParent;
+                oldParent = null;
+            }
             transform.position = TF.position;
             transform.rotation = TF.rotation;
         }
-
     }
-
 }
 

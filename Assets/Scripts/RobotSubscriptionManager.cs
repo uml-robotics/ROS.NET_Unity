@@ -16,9 +16,8 @@ public class RobotSubscriptionManager : ROSMonoBehavior
     
     List<Component> parentScripts = new List<Component>();
     List<Component> childScripts = new List<Component>();
-    private NodeHandle nh = null;
 
-#if UNITY_EDITOR
+/*#if UNITY_EDITOR
     internal bool wrong_parent_warned = false;
 
     public void CheckHierarchy(bool needToCheck = true)
@@ -44,15 +43,15 @@ TFTree
             }
         }
     }
-#endif
+#endif*/
 
     void Start()
     {
-#if UNITY_EDITOR
+/*#if UNITY_EDITOR
         CheckHierarchy(false);
-#endif
-        hideFlags |= HideFlags.DontSave;
-        rosmanager.StartROS(this, () => {
+#endif*/
+        rosmanager.StartROS(this, () =>
+        {
             int numRobots;
             if (!int.TryParse(Robot_Count, out numRobots) && Robot_Count.Length != 0)
             {
@@ -63,39 +62,45 @@ TFTree
                 }
             }
 
-            for (int num = First_Index; num < First_Index + numRobots; num++)
+            TfTreeManager.Instance.AddListener(vis =>
             {
-                GameObject go = new GameObject();
-                go.name = NameSpace_Prefix + num + " (" + GetType().Name + ")";
-                go.transform.parent = transform.root;
-                foreach (Transform prefabTF in transform)
+                GameObject parent = new GameObject();
+                parent.name = "Templated Robots";
+                parent.transform.parent = vis.transform.root;
+                for (int num = First_Index; num < First_Index + numRobots; num++)
                 {
-                    //Maybe put this outside to remove unnecessary loops
-                    foreach (Component script in prefabTF.GetComponents(typeof(MonoBehaviour)))
+                    GameObject go = new GameObject();
+                    go.name = NameSpace_Prefix + num + " (" + GetType().Name + ")";
+                    go.transform.parent = parent.transform;
+                    foreach (Transform prefabTF in transform)
                     {
-                        if (!parentScripts.Contains(script))
-                            parentScripts.Add(script);
+                        //Maybe put this outside to remove unnecessary loops
+                        foreach (Component script in prefabTF.GetComponents(typeof(MonoBehaviour)))
+                        {
+                            if (!parentScripts.Contains(script))
+                                parentScripts.Add(script);
+                        }
+
+                        GameObject prefab = Instantiate(prefabTF.gameObject, parent.transform, false);
+
+                        //add all instantiated objects scripts to child scripts
+                        foreach (Component script in prefab.GetComponents(typeof(MonoBehaviour)))
+                        {
+                            childScripts.Add(script);
+                        }
+
+                        prefab.transform.parent = go.transform;
+                        prefab.name = prefabTF.name;
+                        prefab.SendMessage("setNamespace", NameSpace_Prefix + num, SendMessageOptions.DontRequireReceiver);
                     }
-
-                    GameObject prefab = Instantiate(prefabTF.gameObject);
-
-                    //add all instantiated objects scripts to child scripts
-                    foreach (Component script in prefab.GetComponents(typeof(MonoBehaviour)))
-                    {
-                        childScripts.Add(script);
-                    }
-
-                    prefab.transform.parent = go.transform;
-                    prefab.name = prefabTF.name;
-                    prefab.SendMessage("setNamespace", NameSpace_Prefix + num, SendMessageOptions.DontRequireReceiver);
                 }
-            }
 
-            //after instantiation disable old prefabs to prevent conflicts with default agents
-            foreach (Transform prefabTf in transform)
-            {
-                prefabTf.gameObject.SetActive(false);
-            }
+                //after instantiation disable old prefabs to prevent conflicts with default agents
+                foreach (Transform prefabTf in transform)
+                {
+                    prefabTf.gameObject.SetActive(false);
+                }
+            });
         });
     }
 

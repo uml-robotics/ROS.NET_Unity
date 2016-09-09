@@ -60,8 +60,11 @@ public class ROSMonoBehavior : MonoBehaviour
 /// </summary>
 public class ROSManager
 {
+#if LOG_TO_FILE
     private static object loggerlock = new object();
     private static StreamWriter logwriter = null;
+#endif
+
 
     /// <summary>
     /// Call ROS.Init if it hasn't been called, and informs callers whether to try to make a nodehandle and pubs/subs
@@ -108,7 +111,7 @@ public class ROSManager
             XmlRpcUtil.SetLogLevel(XmlRpcUtil.XMLRPC_LOG_LEVEL.ERROR);
             tf.net.Transformer.LateInit();
         }
-
+#if LOG_TO_FILE
         lock (loggerlock)
         {
             if (logwriter == null)
@@ -141,20 +144,22 @@ public class ROSManager
                     {
                         Debug.LogWarning(e);
                     }
-                    Application.logMessageReceived += Application_logMessageReceived;
                     break;
                 }
             }
         }
+#endif
+        Application.logMessageReceived += Application_logMessageReceived;
     }
 
     static void  Application_logMessageReceived(string condition, string stackTrace, LogType type)
     {
+#if LOG_TO_FILE
         if (type == LogType.Log)
             logwriter.WriteLine("{0}\t\t{1}\n", type.ToString(), condition);
         else
             logwriter.WriteLine("{0}\t\t{1}\n{2}\n", type.ToString(), condition, stackTrace.Split('\n').Aggregate("",(a,b)=>a+"\t"+b+"\n"));
-
+#endif
 #if UNITY_EDITOR
         if (type == LogType.Error || type == LogType.Assert || type == LogType.Exception)
         {
@@ -168,6 +173,7 @@ public class ROSManager
         Debug.Log("ROSManager is shutting down");
         ROS.shutdown();
         ROS.waitForShutdown();
+#if LOG_TO_FILE
         lock (loggerlock)
         {
             Application.logMessageReceived -= Application_logMessageReceived;
@@ -177,6 +183,7 @@ public class ROSManager
                 logwriter = null;
             }
         }
+#endif
     }
 
     void OnApplicationQuit()

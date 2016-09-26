@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using Messages.sensor_msgs;
 using Messages.nav_msgs;
-using UnityEditor;
-
 
 public class RobotCameraView : SensorTFInterface<CompressedImage>
 {

@@ -39,6 +39,12 @@ public class CompressedImageDisplay : ROSMonoBehavior
 
     private AutoResetEvent textureMutex = new AutoResetEvent(false);
 
+    private float aspectRatio = 1.0f;
+    public float GetAspectRatio()
+    {
+        return aspectRatio;
+    }
+
 	// Use this for initialization
     private void Start()
     {
@@ -67,8 +73,9 @@ public class CompressedImageDisplay : ROSMonoBehavior
 	    {
 	        if (mapTexture == null)
                 mapTexture = new Texture2D(2,2);
+
 	        mapTexture.LoadImage(lastimage.data);
-            //DebugText.WriteLine("Texture size = " + mapTexture.width + "x" + mapTexture.height + ", format=" + mapTexture.format);
+	        aspectRatio = 1.0f*mapTexture.width/mapTexture.height;
             rend.material.mainTexture = mapTexture;
 	    }
 	}

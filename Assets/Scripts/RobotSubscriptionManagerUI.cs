@@ -15,8 +15,10 @@ public class RobotSubscriptionManagerUI : Editor
         //make RobotSubscriptionManager.cs inspector only visble when not playing
         if (!Application.isPlaying)
         {
+            /*
             if (rsmTarget.getParentScripts().Count == 0)
                 rsmTarget.CheckHierarchy();
+                */
 
             EditorGUILayout.HelpBox("\"Robot_Count\" can be EITHER an integer OR a parameter name", MessageType.Info);
             
@@ -25,7 +27,9 @@ public class RobotSubscriptionManagerUI : Editor
         }
         else
         {
+            /*
             rsmTarget.wrong_parent_warned = false;
+            */
             //update UI and Masters
             EditorGUILayout.Separator();
             foreach (Component script in rsmTarget.getParentScripts())
@@ -33,7 +37,7 @@ public class RobotSubscriptionManagerUI : Editor
                 EditorGUILayout.LabelField(script.name);
                 foreach (FieldInfo fi in script.GetType().GetFields())
                 {
-                    if (fi.FieldType.Equals(typeof(string)))
+                    if (fi.FieldType == typeof(string))
                     {
                         if (!(fi.Name.Equals("Topic", StringComparison.InvariantCultureIgnoreCase)))
                         {
@@ -46,7 +50,7 @@ public class RobotSubscriptionManagerUI : Editor
                         continue;
                     }
 
-                    if (fi.FieldType.Equals(typeof(int)))
+                    if (fi.FieldType == typeof(int))
                     {
                         int temp = EditorGUILayout.IntField(fi.Name, (int)fi.GetValue(script));
                         if (GUI.changed)
@@ -55,7 +59,7 @@ public class RobotSubscriptionManagerUI : Editor
                         continue;
                     }
 
-                    if (fi.FieldType.Equals(typeof(float)))
+                    if (fi.FieldType == typeof(float))
                     {
                         float temp = EditorGUILayout.FloatField(fi.Name, (float)fi.GetValue(script));
                         if (GUI.changed)
@@ -64,23 +68,38 @@ public class RobotSubscriptionManagerUI : Editor
                         continue;
                     }
 
-                    if (fi.FieldType.Equals(typeof(double)))
+                    if (fi.FieldType == typeof(double))
                     {
                         double temp = EditorGUILayout.DoubleField(fi.Name, (double)fi.GetValue(script));
                         if (GUI.changed)
                             fi.SetValue(script, temp);
                     }
+
+                    if (fi.FieldType == typeof(Vector3))
+                    {
+                        Vector3 temp = EditorGUILayout.Vector3Field(fi.Name, (Vector3)fi.GetValue(script));
+                        if (GUI.changed)
+                            fi.SetValue(script, temp);
+                    }
+
+                    if (fi.FieldType == typeof(Color))
+                    {
+                        Color temp = EditorGUILayout.ColorField(fi.Name, (Color)fi.GetValue(script));
+                        if (GUI.changed)
+                            fi.SetValue(script, temp);
+                    }
+
                 }
                 EditorGUILayout.Space();
                 EditorGUILayout.Space();
             }
 
-            //update agents
+            //update child scripts (agents)
             if (GUI.changed)
             {
                 foreach (Component script in rsmTarget.getChildScripts())
                 {
-                    Component parentScript = rsmTarget.getParentScripts().Find((ps) => { return ps.GetType().Equals(script.GetType()); });
+                    Component parentScript = rsmTarget.getParentScripts().Find(ps => ps.GetType() == script.GetType());
                     foreach (FieldInfo fi in script.GetType().GetFields())
                     {
                         FieldInfo parentFI = parentScript.GetType().GetField(fi.Name);

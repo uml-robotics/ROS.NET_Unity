@@ -81,12 +81,12 @@ public class OrbitRotator : MonoBehaviour
 
     private void HandleZoom()
     {
-       /* Vector3 sixsenseZoom = Vector3.zero;
-        if (left != null)
-            sixsenseZoom = Vector3.forward * left.JoystickY;
+        Vector3 sixsenseZoom = Vector3.zero;
+        if (right != null)
+            sixsenseZoom = Vector3.forward * ((right.GetButton(SixenseButtons.FOUR) ? 1 : 0) + (right.GetButton(SixenseButtons.TWO) ? -1 : 0));
 
         if (!sixsenseZoom.Equals(Vector3.zero))
-            Mast.transform.localPosition += sixsenseZoom * 0.5f;*/
+            Mast.transform.localPosition += sixsenseZoom * 0.125f;
         //hot fix: This will prevent scroll-wheel from moving cam while not on screen
         //does not work when on a diff screen while using synergy
         if (Input.mousePosition.x < 0 || Input.mousePosition.x > Screen.width || Input.mousePosition.y < 0 || Input.mousePosition.y > Screen.height)
@@ -115,7 +115,7 @@ public class OrbitRotator : MonoBehaviour
             sixsenseTrans = Vector3.forward * right.JoystickY + Vector3.right * right.JoystickX;
 
         if (!sixsenseTrans.Equals(Vector3.zero))
-            transform.position += transform.TransformVector(sixsenseTrans * 0.5f);
+            transform.position += transform.TransformVector(sixsenseTrans * 0.125f);
 
         if (!CrossPlatformInputManager.GetButton("Fire3"))
         {

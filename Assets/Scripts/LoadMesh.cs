@@ -9,7 +9,7 @@ using Collada141;
 
 public class LoadMesh : ROSMonoBehavior {
 
-    public string RobotDescriptionParam = "";
+    public string RobotDescriptionParam = "/robot_description";
     private string robotdescription;
     private Dictionary<string, Color?> materials = new Dictionary<string, Color?>();
     public XDocument RobotDescription { get; private set; }
@@ -17,7 +17,7 @@ public class LoadMesh : ROSMonoBehavior {
     private TfVisualizer tfviz;
 
     //ros stuff
-    public string NameSpace = "";
+    public string NameSpace = "agent";
     public void setNamespace(string _NameSpace)
     {
         NameSpace = _NameSpace;

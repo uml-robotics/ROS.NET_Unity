@@ -15,6 +15,8 @@ public class OrbitRotator : MonoBehaviour
     // (Think: looking out the side window of a car, or a gun turret
     // on a moving spaceship with a limited angular range)
     // to have no constraints on an axis, set the rotationRange to 360 or greater.
+
+        //Consider rewriting as state machine having it flow a bit more cleanly
     public Vector2 rotationRange = new Vector3(90, 90);
     public float rotationSpeed = 5;
     public float translationSpeed = 20;
@@ -25,7 +27,23 @@ public class OrbitRotator : MonoBehaviour
     private bool ignoreEvents;
     public Component Pivot;
     public Component Mast;
-        
+
+    private SixenseInput.Controller left
+    {
+        get
+        {
+            return SixenseInput.GetController(SixenseHands.LEFT);
+        }
+    }
+
+    private SixenseInput.Controller right
+    {
+        get
+        {
+            return SixenseInput.GetController(SixenseHands.RIGHT);
+        }
+    }
+
     private Camera cam {
         get
         {
@@ -63,6 +81,12 @@ public class OrbitRotator : MonoBehaviour
 
     private void HandleZoom()
     {
+       /* Vector3 sixsenseZoom = Vector3.zero;
+        if (left != null)
+            sixsenseZoom = Vector3.forward * left.JoystickY;
+
+        if (!sixsenseZoom.Equals(Vector3.zero))
+            Mast.transform.localPosition += sixsenseZoom * 0.5f;*/
         //hot fix: This will prevent scroll-wheel from moving cam while not on screen
         //does not work when on a diff screen while using synergy
         if (Input.mousePosition.x < 0 || Input.mousePosition.x > Screen.width || Input.mousePosition.y < 0 || Input.mousePosition.y > Screen.height)
@@ -71,7 +95,7 @@ public class OrbitRotator : MonoBehaviour
         Vector2 scrollDelta = Input.mouseScrollDelta;
         if (!scrollDelta.Equals(Vector2.zero))
         {
-            Mast.transform.localPosition = new Vector3(Mast.transform.localPosition.x, Mast.transform.localPosition.y, Mast.transform.localPosition.z + scrollDelta.y * 2f);
+            Mast.transform.localPosition += new Vector3(0, 0, scrollDelta.y * 2f);
         }
         else
         {
@@ -80,12 +104,19 @@ public class OrbitRotator : MonoBehaviour
                 return;
             }
             float inputV = CrossPlatformInputManager.GetAxis("Mouse Y");
-            Mast.transform.localPosition = new Vector3(Mast.transform.localPosition.x, Mast.transform.localPosition.y, Mast.transform.localPosition.z + inputV);
+            Mast.transform.localPosition += new Vector3(0, 0, Mast.transform.localPosition.z + inputV);
         }
     }
 
     private void HandleTranslate()
     {
+        Vector3 sixsenseTrans = Vector3.zero;
+        if (right != null)
+            sixsenseTrans = Vector3.forward * right.JoystickY + Vector3.right * right.JoystickX;
+
+        if (!sixsenseTrans.Equals(Vector3.zero))
+            transform.position += transform.TransformVector(sixsenseTrans * 0.5f);
+
         if (!CrossPlatformInputManager.GetButton("Fire3"))
         {
             m_OnClickPointerOrigin = null;
@@ -106,7 +137,12 @@ public class OrbitRotator : MonoBehaviour
 
     private void HandlePivot()
     {
-        if (!CrossPlatformInputManager.GetButton("Fire1"))
+        Vector2 sixsensePivot = Vector2.zero;
+        if (left != null)
+            sixsensePivot = Vector2.right * left.JoystickX + Vector2.up * left.JoystickY;
+
+        
+        if (!CrossPlatformInputManager.GetButton("Fire1") && sixsensePivot.Equals(Vector2.zero))
         {
             return;
         }
@@ -115,13 +151,16 @@ public class OrbitRotator : MonoBehaviour
         Pivot.transform.localRotation = m_OriginalRotation;
 
         // read input from mouse or mobile controls
-        float inputH;
-        float inputV;
+        float inputH = sixsensePivot.x;
+        float inputV = sixsensePivot.y;
         if (relative)
         {
             inputH = CrossPlatformInputManager.GetAxis("Mouse X");
             inputV = CrossPlatformInputManager.GetAxis("Mouse Y");
 
+
+
+            print("inputH: " + inputH + " inputV: " + inputV);
             // wrap values to avoid springing quickly the wrong way from positive to negative
             if (m_TargetAngles.y > 180)
             {
@@ -169,12 +208,12 @@ public class OrbitRotator : MonoBehaviour
         }
         else
         {
-            inputH = Input.mousePosition.x;
-            inputV = Input.mousePosition.y;
+            //inputH += Input.mousePosition.x;
+            //inputV += Input.mousePosition.y;
 
             // set values to allowed range
-            m_TargetAngles.y = Mathf.Lerp(-rotationRange.y * 0.5f, rotationRange.y * 0.5f, inputH / Screen.width);
-            m_TargetAngles.x = Mathf.Lerp(-rotationRange.x * 0.5f, rotationRange.x * 0.5f, inputV / Screen.height);
+            m_TargetAngles.y += inputH;//Mathf.Lerp(-rotationRange.y * 0.5f, rotationRange.y * 0.5f, inputH);// / Screen.width);
+            m_TargetAngles.x += inputV;//Mathf.Lerp(-rotationRange.x * 0.5f, rotationRange.x * 0.5f, inputV);// / Screen.height);
         }
 
         // smoothly interpolate current values to target angles

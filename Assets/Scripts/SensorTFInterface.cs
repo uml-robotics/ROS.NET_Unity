@@ -66,7 +66,7 @@ public class SensorTFInterface<M> : ROSMonoBehavior where M : IRosMessage, new()
     //figures out the frameid of the sensor 
     private void _realCallback(M msg)
     {
-        if (TFName == null && msg.HasHeader())
+        if (TFName == null && msg.HasHeader)
         {
             FieldInfo fi = msg.GetType().GetFields().First(a => a.FieldType == typeof(Header));
             if (fi != null)

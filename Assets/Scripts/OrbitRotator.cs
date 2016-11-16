@@ -141,8 +141,8 @@ public class OrbitRotator : MonoBehaviour
         if (left != null)
             sixsensePivot = Vector2.right * left.JoystickX + Vector2.up * left.JoystickY;
 
-        
-        if (!CrossPlatformInputManager.GetButton("Fire1") && sixsensePivot.Equals(Vector2.zero))
+        Debug.Log("Pivot: " + sixsensePivot.x);
+        if (!CrossPlatformInputManager.GetButton("Fire1") && (sixsensePivot.Equals(Vector2.zero) || sixsensePivot.magnitude < .7 ))
         {
             return;
         }
